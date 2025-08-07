@@ -1,19 +1,14 @@
+// GameUI.ts
+
 import * as hz from 'horizon/core'
-import { Color } from 'horizon/core' 
+import { Color } from 'horizon/core'
 import {
   UIComponent, View, Text, Pressable, Binding, UINode,
   DynamicList, Image, ImageSource, ScrollView, AnimatedBinding, Animation, Easing
 } from 'horizon/ui'
 import {
-  Generator, QuestDisplayData, OnUpdatePlayerState, OnManualDrill, OnBuyGenerator, ClickMilestone,
+  Generator, QuestDisplayData, OnUpdatePlayerState, OnManualDrill, OnBuyGenerator, ClickMilestone, OnGemCountUpdate
 } from './Events'
-
-type FloatingNumberState = {
-    textBinding: Binding<string>;
-    yBinding: AnimatedBinding;
-    opacityBinding: AnimatedBinding;
-    visibleBinding: Binding<boolean>;
-};
 
 export class GameUI extends UIComponent<typeof GameUI> {
   static propsDefinition = {
@@ -21,57 +16,64 @@ export class GameUI extends UIComponent<typeof GameUI> {
     DiamondIcon: { type: hz.PropTypes.Asset },
   }
 
+  // --- BINDINGS ---
   private readonly gemCountBinding = new Binding(0)
   private readonly generatorsBinding = new Binding<Generator[]>([])
-  private readonly currentQuestBinding = new Binding<QuestDisplayData>({id: 0, description: "Loading Quest..."})
+  private readonly currentQuestBinding = new Binding<QuestDisplayData>({ id: 0, description: "Loading Quest..." })
   private readonly currentScreenBinding = new Binding<'menu' | 'game'>('menu')
   private readonly diamondScaleBinding = new AnimatedBinding(1);
   private readonly gemsPerClickBinding = new Binding(1);
   private readonly nextClickMilestoneBinding = new Binding<ClickMilestone | null>(null);
+  private readonly totalGPSBinding = new Binding(0);
+  private readonly depthBinding = new Binding(0);
 
+  // --- PRIVATE CLASS VARIABLES ---
   private gemsPerClick = 1;
+  private gemCount = 0;
+  // [NEW] Flag to prevent animation spamming
+  private gemAnimationInProgress = false;
 
-  private readonly floatingNumberPool: FloatingNumberState[] = [];
-  private nextFloatingNumberIndex = 0;
-  private readonly FLOATING_NUMBER_POOL_SIZE = 8;
-  
   start() {
     const localPlayer = this.world.getLocalPlayer()
     if (localPlayer && localPlayer !== this.world.getServerPlayer()) {
       localPlayer.enterFocusedInteractionMode()
       hz.PlayerControls.disableSystemControls()
     }
-
+    
     this.connectNetworkEvent(
         this.world.getLocalPlayer(),
         OnUpdatePlayerState,
         (data) => {
+          this.gemCount = data.gemCount;
+          this.gemsPerClick = data.gemsPerClick;
+          
           this.gemCountBinding.set(data.gemCount)
           this.generatorsBinding.set(data.generators)
           this.currentQuestBinding.set(data.currentQuest)
           this.gemsPerClickBinding.set(data.gemsPerClick)
-          this.gemsPerClick = data.gemsPerClick;
           this.nextClickMilestoneBinding.set(data.nextClickMilestone);
+          this.totalGPSBinding.set(data.totalGPS);
+          this.depthBinding.set(data.depth);
         },
-      )
+    );
+
+    this.connectNetworkEvent(
+        this.world.getLocalPlayer(),
+        OnGemCountUpdate,
+        (data) => {
+            this.gemCount = data.gemCount;
+            this.gemCountBinding.set(data.gemCount);
+            this.totalGPSBinding.set(data.totalGPS);
+        }
+    );
   }
 
   initializeUI(): UINode {
-    for (let i = 0; i < this.FLOATING_NUMBER_POOL_SIZE; i++) {
-        this.floatingNumberPool.push({
-            textBinding: new Binding("+1"),
-            yBinding: new AnimatedBinding(0),
-            opacityBinding: new AnimatedBinding(0),
-            visibleBinding: new Binding(false)
-        });
-    }
-
     const mainView = UINode.if(
       this.currentScreenBinding.derive(s => s === 'menu'),
       this.renderMenuScreen(),
       this.renderGameScreen(),
     )
-
     const children: UINode[] = [];
     if (this.props.BackgroundImage) {
         children.push(Image({
@@ -83,23 +85,7 @@ export class GameUI extends UIComponent<typeof GameUI> {
       style: { position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.5)' },
     }));
     children.push(mainView);
-
     return View({ style: { width: '100%', height: '100%' }, children: children });
-  }
-
-  private triggerFloatingNumber(text: string) {
-    const numberState = this.floatingNumberPool[this.nextFloatingNumberIndex];
-    this.nextFloatingNumberIndex = (this.nextFloatingNumberIndex + 1) % this.FLOATING_NUMBER_POOL_SIZE;
-
-    numberState.visibleBinding.set(true);
-    numberState.textBinding.set(text);
-    numberState.yBinding.set(0);
-    numberState.opacityBinding.set(1);
-
-    numberState.yBinding.set(Animation.timing(-100, { duration: 1500, easing: Easing.out(Easing.quad) }), () => {
-        numberState.visibleBinding.set(false);
-    });
-    numberState.opacityBinding.set(Animation.timing(0, { duration: 1500, easing: Easing.in(Easing.quad) }));
   }
 
   private formatCompactNumber(value: number): string {
@@ -138,11 +124,10 @@ export class GameUI extends UIComponent<typeof GameUI> {
 
   private renderClickerPanel(): UINode {
     const mineButtonText = this.gemsPerClickBinding.derive(gpc => `Mine ${gpc} Gem${gpc > 1 ? 's' : ''}`);
-
     let clickerContent: UINode;
     if (this.props.DiamondIcon) {
-        clickerContent = Image({ 
-            source: ImageSource.fromTextureAsset(this.props.DiamondIcon.as(hz.TextureAsset)),
+        clickerContent = Image({
+             source: ImageSource.fromTextureAsset(this.props.DiamondIcon.as(hz.TextureAsset)),
             style: { width: 256, height: 256 }
         });
     } else {
@@ -157,69 +142,66 @@ export class GameUI extends UIComponent<typeof GameUI> {
       children: [
         View({
           style: {
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            borderRadius: 10,
-            justifyContent: 'center',
-            alignItems: 'center',
-            position: 'relative'
-          },
+            width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.5)', borderRadius: 10,
+            justifyContent: 'center', alignItems: 'center', position: 'relative'
+         },
           children: [
-            View({
-                style: { position: 'absolute', top: '50%', marginTop: -120, zIndex: 15 },
-                children: this.floatingNumberPool.map(num => 
-                    UINode.if(num.visibleBinding, View({
-                        style: {
-                            transform: [{ translateY: num.yBinding }],
-                            opacity: num.opacityBinding,
-                        },
-                        children: [
-                            Text({
-                                text: num.textBinding,
-                                style: {
-                                    fontSize: 48,
-                                    fontWeight: 'bold',
-                                    color: '#FFD700',
-                                    textShadowColor: 'black',
-                                    textShadowOffset: [2, 2],
-                                    textShadowRadius: 2,
-                                }
-                            })
-                        ]
-                    }))
-                )
-            }),
             Pressable({
-              onPress: () => this.diamondScaleBinding.set(Animation.timing(0.9, { duration: 100 })),
-              onRelease: () => this.diamondScaleBinding.set(Animation.timing(1.0, { duration: 100 })),
+              // [REMOVED] onPress and onRelease are removed to prevent animation conflicts.
+              // [MODIFIED] onClick now handles the entire animation sequence.
               onClick: (player) => {
+                // Instantly update the gem count for responsiveness
+                this.gemCount += this.gemsPerClick;
+                this.gemCountBinding.set(this.gemCount);
+                
+                // Notify the server about the click
                 this.sendNetworkBroadcastEvent(OnManualDrill, { player });
-                this.triggerFloatingNumber(`+${this.gemsPerClick}`);
+
+                // Check if an animation is already playing to prevent spamming
+                if (this.gemAnimationInProgress) return;
+
+                // Set the flag to true
+                this.gemAnimationInProgress = true;
+
+                // Create a single, self-contained "bop" animation
+                const clickAnimation = Animation.sequence(
+                    Animation.timing(0.9, { duration: 75 }),
+                    Animation.timing(1.0, { duration: 75 })
+                );
+
+                // Play the animation and use the onEnd callback to reset the flag
+                this.diamondScaleBinding.set(clickAnimation, () => {
+                    this.gemAnimationInProgress = false;
+                });
               },
-              style: {
-                transform: [{ scale: this.diamondScaleBinding }],
-                zIndex: 10, 
-                marginBottom: 20,
-              },
-              children: [ clickerContent ],
+              style: { transform: [{ scale: this.diamondScaleBinding }], zIndex: 10, marginBottom: 20, },
+              children: [clickerContent],
             }),
             Text({
               text: this.gemCountBinding.derive(count => `Gems: ${this.formatCompactNumber(count)}`),
               style: { color: 'white', fontSize: 60, textShadowColor: '#000000', textShadowOffset: [2, 2] },
             }),
-            Text({
-                text: this.nextClickMilestoneBinding.derive(milestone => {
-                    if (milestone) {
-                        return `Next Upgrade at ${this.formatCompactNumber(milestone.clicks)} Clicks: ${milestone.gemsPerClick} Gems per Click!`;
-                    }
-                    return "Click Power Maxed Out!";
+            View({
+              style: { flexDirection: 'row', marginTop: 10 },
+              children: [
+                Text({
+                  text: this.totalGPSBinding.derive(gps => `GPS: ${this.formatCompactNumber(gps)}`),
+                  style: { color: '#B2F3FF', fontSize: 22, textShadowColor: '#000000', textShadowOffset: [1, 1], marginRight: 15 },
                 }),
-                style: {
-                    color: '#FFD700',
-                    fontSize: 18,
-                    marginTop: 10
+                Text({
+                  text: this.depthBinding.derive(d => `Depth: ${this.formatCompactNumber(d)}m`),
+                  style: { color: '#B2F3FF', fontSize: 22, textShadowColor: '#000000', textShadowOffset: [1, 1], marginLeft: 15 },
+                }),
+              ]
+            }),
+            Text({
+              text: this.nextClickMilestoneBinding.derive(milestone => {
+                if (milestone) {
+                  return `Next Upgrade at ${this.formatCompactNumber(milestone.clicks)} Clicks: ${milestone.gemsPerClick} Gems per Click!`;
                 }
+                return "Click Power Maxed Out!";
+              }),
+              style: { color: '#FFD700', fontSize: 18, marginTop: 10 }
             })
           ]
         })
@@ -256,8 +238,8 @@ export class GameUI extends UIComponent<typeof GameUI> {
             Text({ text: `Cost: ${this.formatCompactNumber(item.currentCost)} Gems`, style: { color: '#CCCCCC', fontSize: 14 } }),
             Text({ text: `+${this.formatCompactNumber(item.productionRate)} GPS`, style: { color: '#CCCCCC', fontSize: 14 } }),
             UINode.if(
-                item.nextMilestone !== undefined,
-                Text({ text: `Next bonus at ${item.nextMilestone?.owned}: x${item.nextMilestone?.multiplier} Production!`, style: { color: '#FFD700', fontSize: 14, marginTop: 4 } })
+              item.nextMilestone !== undefined,
+              Text({ text: `Next bonus at ${item.nextMilestone?.owned}: x${item.nextMilestone?.multiplier} Production!`, style: { color: '#FFD700', fontSize: 14, marginTop: 4 } })
             )
           ],
         }),
@@ -270,11 +252,11 @@ export class GameUI extends UIComponent<typeof GameUI> {
               onClick: (player) => this.sendNetworkBroadcastEvent(OnBuyGenerator, { player, generatorId: item.id }),
               children: [Text({ text: 'Buy', style: { color: 'white', fontSize: 18 } })],
               style: {
-                backgroundColor: this.gemCountBinding.derive(gems => 
-                  gems >= item.currentCost ? '#34A853' : '#555555'
+                backgroundColor: this.gemCountBinding.derive(gems =>
+                   gems >= item.currentCost ? '#34A853' : '#555555'
                 ),
                 padding: 10, borderRadius: 5
-              },
+             },
             }),
           ]
         })
@@ -297,4 +279,5 @@ export class GameUI extends UIComponent<typeof GameUI> {
     })
   }
 }
-UIComponent.register(GameUI)
+
+UIComponent.register(GameUI);
