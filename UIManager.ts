@@ -1,5 +1,3 @@
-// UIManager.ts
-
 import * as hz from 'horizon/core';
 import { 
     onImagesReady, 
