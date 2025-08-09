@@ -231,7 +231,7 @@ export class GameUI extends UIComponent<typeof GameUI> {
                 
                 View({ style: { flexDirection: 'row', alignItems: 'center', marginLeft: 15 }, children: [
                     Text({ text: this.depthBinding.derive(d => `Depth: ${this.formatCompactNumber(d)}m`), style: { color: '#B2F3FF', fontSize: 22, textShadowColor: '#000000', textShadowOffset: [1, 1] } }),
-                    Text({ text: this.rebirthStateBinding.derive((rs: RebirthState) => ` (+${(rs.darkMatter * 1).toFixed(0)}%)`), style: { color: '#ab47bc', fontSize: 20, fontWeight: 'bold' } }),
+                    Text({ text: this.rebirthStateBinding.derive((rs: RebirthState) => ` (+${(rs.darkMatter * 2).toFixed(0)}%)`), style: { color: '#ab47bc', fontSize: 20, fontWeight: 'bold' } }),
                 ]}),
             ]}),
             View({ style: { flexDirection: 'row', alignItems: 'center', marginTop: 10}, children: [
@@ -311,7 +311,7 @@ export class GameUI extends UIComponent<typeof GameUI> {
     const canRebirth = this.rebirthStateBinding.derive(rs => rs.darkMatter >= rebirthDarkMatterCost);
     
     const darkMatterBonusText = this.rebirthStateBinding.derive((rs: RebirthState) => {
-        const bonus = 1 + (rs.darkMatter * 0.01);
+        const bonus = 1 + (rs.darkMatter * 0.02);
         return `Your current Dark Matter provides a x${bonus.toFixed(2)} global production bonus.`;
     });
 
@@ -360,7 +360,7 @@ export class GameUI extends UIComponent<typeof GameUI> {
                 Text({ 
                     text: this.rebirthStateBinding.derive((rs: RebirthState) => {
                         const baseProduction = item.productionRate * item.owned;
-                        const totalProduction = baseProduction * (1 + (rs.darkMatter * 0.01));
+                        const totalProduction = baseProduction * (1 + (rs.darkMatter * 0.02));
                         const bonus = totalProduction - baseProduction;
                         return (bonus > 0) ? ` +${this.formatCompactNumber(bonus)}` : '';
                     }), 

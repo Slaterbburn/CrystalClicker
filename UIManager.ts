@@ -22,7 +22,7 @@ export class UIManager extends hz.Component<typeof UIManager> {
 
   private async initPlayerUI(player: hz.Player) {
     if (!this.props.GameUIPrefab) {
-      hz.logError("ERROR: The 'GameUIPrefab' property is not set in the UIManager script. The UI will not load for players.");
+      console.error("ERROR: The 'GameUIPrefab' property is not set in the UIManager script. The UI will not load for players.");
       return;
     }
 
@@ -30,7 +30,7 @@ export class UIManager extends hz.Component<typeof UIManager> {
     const gameUIPrefab = this.props.GameUIPrefab.as(hz.Asset);
     
     // Instantiate the UI and assign the player as the creator
-    const [gameUIInstance] = await this.world.spawnAsset(gameUIPrefab);
+    const [gameUIInstance] = await this.world.spawnAsset(gameUIPrefab, new hz.Vec3(0, 0, 0));
 
     // The critical step: Assign ownership to the player to make the UI visible
     if (gameUIInstance) {
