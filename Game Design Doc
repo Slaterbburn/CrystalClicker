@@ -1,0 +1,544 @@
+2.0 Core Gameplay Loop
+The player's journey is defined by a simple yet deeply compelling loop designed for long-term engagement:
+Drill (Click): The player manually taps a visually prominent gem to generate resources and increase their "Depth" meter. Hitting clicking milestones visually upgrades the gem itself over 10 tiers, triggering a major celebratory event, and increases the number of Crystals earned per click.
+
+
+Invest (Automate): The player spends Crystals to purchase and upgrade automated Generators. The cost of these generators scales exponentially, and their production is significantly boosted by reaching ownership milestones.
+
+
+Boost: On a recurring cooldown, players can activate powerful, temporary boosts (e.g., "x2 Clicks," "Generator Overdrive") to dramatically accelerate their progress. This creates an appointment mechanic, rewarding players for returning to the game regularly.
+
+
+Explore: As players increase their Depth by clicking, they will hit milestones that permanently change the background environment via a cinematic, full-screen transition, giving them a tangible sense of discovering deeper, more exotic layers of the planet.
+
+
+Rebirth (Prestige): Once a monumental number of Crystals is reached, players can reset their progress to earn a prestige currency that provides significant, permanent boosts to all future runs, making each new playthrough faster and more powerful.
+
+
+3.1 Theme & Narrative
+Theme: Interstellar Resource Magnate. The core fantasy is about starting with a single mining laser and building a high-tech, automated, galaxy-spanning resource empire. All terminology should reflect a professional, futuristic corporate environment.
+
+
+Aesthetic: The UI is designed as a clean, professional Heads-Up Display (HUD) from a starship's command deck. It utilizes a dark, deep-space background with glowing neon highlights (blues, purples, and gold) to ensure clarity and a futuristic feel. UI elements will feature sharp lines, vector icons, and holographic elements to immerse the player in their role as a high-tech mining Operator.
+
+
+Narrative: The player is a new Operator for the ambitious Hyperion Mining Guild. Tasked with exploiting a newly discovered, resource-rich asteroid, the player's goal is to rise from a rookie prospector to a legendary magnate. Quests, framed as Corporate Directives, will guide the Operator through the initial stages of setting up their operation. The Depth Progression system provides a tangible sense of exploration and discovery, as the Operator increases their Depth and the background environment shifts to reveal they have drilled through the asteroid's crust into exotic subterranean layers like shimmering Crystal Caves, a volatile Magma Core, and eventually, the mysterious Planet Core itself.
+
+
+4.0 UI/UX Design
+Our primary goal is a seamless and satisfying user experience. Every interaction should feel responsive and rewarding.
+4.1 Screen Flow
+The player will navigate through a more robust screen hierarchy that provides access to all game systems from a central hub.
+Offline Progress Pop-up: The very first thing a returning player sees, detailing the Crystals earned while they were away.
+Main Menu: [📋 PLANNED] The central hub of the game. It will feature buttons to navigate to:
+Continue Game
+Login Rewards
+Profile / Ranks
+Stats & Leaderboards
+IAP Store (Boosts & Cosmetics)
+Game Screen: The main interface where all core gameplay occurs.
+Profile Screen: A dedicated screen to view the player's rank and overall statistics.
+Stats/Leaderboards Screen: A screen to view detailed personal gameplay statistics and compare with other players.
+Custom UI Implementation: This screen will feature a custom-built UI to display leaderboard data. As the native World Leaderboard Gizmo is an in-world object, we will not use it. Instead, our UI will read score data from our own Player Persistent Variables (PPVs) to display rankings within the game.
+Store Screen: A dedicated screen for monetized items like boosts and cosmetic UI skins.
+Minigame Screens: A hub or series of pop-ups to access and play the "10 Second Precision" and "60-Second Blitz" minigames.
+Duel Arena Screen: A dedicated, server-side UI for conducting "Live Mining Blitz" duels.
+
+4.2 Main Game Screen (Landscape Layout)
+The main screen is divided into two primary panes for clarity and ease of use on a landscape display.
+Left Pane ("The Cockpit"): This pane contains the player's primary interactive element and their core stats.
+Drill Button: The main clickable, evolving crystal image.
+Primary Display: A large, clear readout showing the player's current Crystals.
+Supporting Readouts: Displays for Crystals Per Second (CPS), mining Depth, and the next Clicking Milestone.
+Boost Button: A button that displays a cooldown timer for the timed power-up system. (Cancelled until further notice)
+Right Pane ("Generator Bay"): This pane is the hub for automation and progression.
+Generator List: A vertically scrollable list of all available generators.
+Generator Item: Each item in the list will clearly display its name, cost, owned count, next milestone bonus, and its [📋 PLANNED] total current CPS contribution (including all units and active bonuses).
+Current Quest: A dedicated area that displays the player's active Corporate Directive.
+4.3 Accessibility & Settings
+To provide a comfortable experience for all players, a setting will be available to swap the layout of the main game screen.
+Layout Choice: Players can choose between "Right-Handed" (default, Cockpit on the left) and "Left-Handed" (Cockpit on the right) layouts.
+Reasoning for Changes:
+Main Game Screen Status: Changed the parent status to since some key elements (like the Boost button) are still planned.
+Supporting Readouts Status: Updated to as the GPS and Depth displays are now functional in GameUI.ts.
+Generator Item Status: Changed to and added a [📋 PLANNED] tag for the CPS contribution. While the item shows most information, we have not yet implemented the logic to display the total CPS for each individual generator type
+
+
+5.0 Progression & Systems
+5.1 Generators [✅ IMPLEMENTED] The store features a list of 8 generators with exponentially increasing costs and outputs to ensure a long and engaging progression curve.
+Simple Miner
+Advanced Drill
+Excavation Team
+Quarry
+Deep-Earth Extractor
+Gem Synthesizer
+Planet Cracker
+Stardust Collector
+
+5.2 Generator Milestones [✅ IMPLEMENTED] For each Generator, reaching specific ownership milestones (10, 25, 50, 100+) unlocks a permanent production multiplier for that specific generator, creating strategic choices for the player.
+
+Milestone (Units Owned)
+Production Multiplier
+10
+x2
+25
+x3
+50
+x5
+100
+x10
+200
+x20
+500
+x50
+1000
+x100
+
+
+5.3 Evolving Clicker [📋 PLANNED] The primary clickable crystal will visually upgrade through 10 distinct tiers to reflect the player's increasing manual clicking power. This provides a constant and satisfying visual reward for active play.
+
+Tier
+Required Clicks
+Thematic Appearance Name
+1
+0
+Unrefined Asteroid Rock
+2
+100
+Fractured Geode
+3
+1,000
+Cut Crystal
+4
+10,000
+Charged Quartz
+5
+50,000
+Polished Starfire Gem
+6
+250,000
+Ornate Xenon Jewel
+7
+1,000,000
+Shifting Prismatic Core
+8
+10,000,000
+Pulsating Diamond
+9
+100,000,000
+Condensed Nebula Shard
+10
+1,000,000,000
+The Hyperion Heartstone
+
+
+5.4 Depth Progression & Environmental Changes [⏳ IN PROGRESS] To create a powerful sense of exploration, a "Depth" stat tracks how far the player has drilled (1 click = 1 meter). Reaching specific Depth Milestones triggers a permanent change in the world's background image.
+
+Tier
+Depth Required
+New Environment
+1
+0m
+Asteroid Surface
+2
+100m
+Iron Veins
+3
+1,000m
+Crystal Caves
+4
+10,000m
+Bioluminescent Caverns
+5
+50,000m
+Subterranean Ocean
+6
+250,000m
+Magma Core
+7
+1,000,000m
+Ancient Ruins
+8
+10,000,000m
+The Void
+9
+100,000,000m
+Geode Interior
+10
+1,000,000,000m
+Cosmic Nexus
+
+
+5.5 Timed Power Boosts [📋 PLANNED] To create a strong "appointment mechanic," the game will feature powerful, temporary boosts available on recurring cooldowns.
+Auto-Clicker (1 Hour Cooldown): Automatically clicks the main crystal at a rapid rate for 2 minutes.
+Click Frenzy (30 Minute Cooldown): Multiplies the value of each manual click by 10 for 3 minutes.
+Generator Overdrive (30 Minute Cooldown): Doubles the production of all generators for 30 minutes.
+5.6 Player Ranks & Guild Reputation [📋 PLANNED] To provide long-term goals that persist through Rebirths, players will earn ranks based on their Total Guild Reputation (GR). This stat never resets and is earned by actively participating in all aspects of the mining operation.
+Scoring System: Players earn GR points for the following actions, with the values weighted based on the action's frequency and significance:
+Action
+Guild Reputation (GR) Awarded
+Manual Click
++1 GR (per 100 clicks)
+Generator Purchase/Upgrade
++10 GR (per purchase)
+Quest Completion
++500 GR (per directive)
+Rebirth
++10,000 GR (per rebirth)
+
+
+Ranks: Each rank comes with a new sci-fi title displayed on the player's Profile.
+#
+Rank Title
+Total Guild Reputation Required
+1
+Prospector
+1,000 GR
+2
+Operator
+5,000 GR
+3
+Foreman
+25,000 GR
+4
+Site Chief
+100,000 GR
+5
+Guild Surveyor
+500,000 GR
+6
+Sector Commander
+2,500,000 GR
+7
+Planetary Director
+10,000,000 GR
+8
+System Magnate
+50,000,000 GR
+9
+Galactic Viceroy
+250,000,000 GR
+10
+Hyperion Legend
+1,000,000,000 GR
+
+5.7 Rebirth System (Prestige) [📋 PLANNED] This is the core endgame loop that ensures Idle Crystal Clicker has near-infinite replayability. It allows players to reset their core progress in exchange for massive, permanent bonuses.
+Rebirth Mechanics
+Rebirth Currency: When a player rebirths, they earn Dark Matter.
+Rebirth Trigger: The option to Rebirth becomes available once the player reaches a set goal, for instance, 1 Quadrillion Crystals (1e15).
+The Cost: Rebirthing resets Crystals, all owned Generators, and Quest progress.
+The Reward: The player keeps all Ranks, Guild Reputation, and earned Dark Matter, which provides a powerful global bonus to all future progress.
+Economic Formulae
+Dark Matter Earned: The amount of Dark Matter earned is calculated based on the player's Peak Crystals Per Second (CPS) achieved during the run. This rewards building a powerful and efficient economic engine.
+Dark Matter Earned = floor( 10 * log10(Peak CPS This Run) )
+Dark Matter Bonus: Each point of Dark Matter provides a permanent, stacking bonus to all production.
+Bonus: +2% to all Crystal production (clicks and generators) per point of Dark Matter.
+Example: A player with a peak production of 1 Quadrillion CPS would earn floor(10 * log10(1e15)) = 150 Dark Matter, granting them a +300% (x4) production bonus on their next run.
+UI/UX for Rebirth
+A new button will appear on the UI when the Rebirth cost is met.
+Clicking it opens a confirmation pop-up that clearly explains: what will be reset, how much Dark Matter they will earn, and what their new total production bonus will be.
+This must have a "Confirm" button to prevent accidental resets.
+5.8 Offline Progress System [📋 PLANNED] To reward players for returning, the game will calculate and award Crystals earned while the game was closed.
+Base Limit: By default, the system will calculate a maximum of 2 hours of offline time.
+Player Incentive: This limited window creates a strong incentive for players to check back at least every few hours to collect their earnings and maximize their progress.
+5.9 Daily Login Rewards [📋 PLANNED]
+To provide tangible, high-value rewards for returning players, a daily login reward system will be implemented. This feature is designed to act as a strong appointment mechanic and give players a sample of the game's premium items and utilities to demonstrate their value.
+UI Implementation:
+The system will be accessed via a new "Login Rewards" button added to the Main Menu hub.
+It will not be an intrusive pop-up.
+A non-intrusive notification badge will appear on the button when a reward is available to be claimed.
+Clicking the button will navigate the player to a dedicated screen showing the 7-day reward track.
+7-Day Reward Schedule: Rewards escalate in value to incentivize consecutive daily logins.
+If a player misses a day, the cycle resets to Day 1.
+After claiming the Day 7 reward, the player will continue to be offered the Day 7 reward for each subsequent consecutive day until their login streak is broken.
+Day
+Tangible Reward
+Day 1
+1 Hour Time Warp
+Day 2
+25 Hyper-Credits
+Day 3
+1x "Generator Overdrive" Consumable
+Day 4
+75 Hyper-Credits
+Day 5
+"Booster Coolant" (New Item: All boost cooldowns reduced by 50% for 2 hours)
+Day 6
+4 Hour Time Warp
+Day 7
+Hyperion Cache (New Item) containing: • 200 Hyper-Credits • 1 Dark Matter • 1x "Cooldown Skip" Token
+
+
+5.10 Codex / Collection System [📋 PLANNED] To enhance long-term retention and provide players with a visual record of their accomplishments, a "Codex" screen will be accessible from the main menu. This system will feature unlockable artwork and icons that are earned by reaching specific in-game milestones. The Codex will be divided into sections (e.g., Generators, Environments, Crystal Tiers) and will utilize a "greyed-out" silhouette style for unearned entries to motivate players with a strong completionist goal. This progression will persist through the Rebirth system.
+5.12 Global Daily Report System
+(This replaces the previous concept for 5.11 and will be added to the Progression section of the GDD)
+Status: [📋 PLANNED]
+5.12.1 - Overview & Design Philosophy
+To make the world of Idle Crystal Clicker feel vibrant, massive, and socially active, we will implement a "Global Daily Report" system. This will be the first screen a player sees upon returning to the world. It will present them with key statistics aggregated from all players across all instances of the world from the previous day. This provides powerful social proof, creates a sense of a shared global effort, and gives players context for their own progress within the wider community.
+5.12.2 - Technical Implementation
+This system is made possible by the
+persistentStorageWorld API, which allows us to set and increment variables that are shared globally across all instances of the world.
+World-Level Variables: We will create a set of world-level persistent variables to track key metrics. These will include:
+daily:crystalsMined (Counter)
+daily:rebirthsCompleted (Counter)
+daily:questsCompleted (Counter)
+global:totalCrystalsEver (Counter)
+Data Aggregation: The server-side GameStateManager will be responsible for updating these counters. For example, when any player successfully completes a Rebirth, the manager will call
+ this.world.persistentStorageWorld.incrementWorldCounter("daily:rebirthsCompleted", 1).
+Daily Reset: A server-side script will be responsible for checking the current date. At the beginning of each new day (e.g., at 00:00 UTC), it will archive the previous day's stats and reset the daily: counters back to zero, ensuring the report is always fresh.
+5.12.3 - UI Implementation & Content
+The report will be integrated into the "welcome back" pop-up, appearing alongside the player's personal Offline Progress report. It will be thematically titled the "Hyperion Guild Daily Briefing".
+The briefing will contain dynamic modules such as:
+Your Offline Cache Report:
+This remains the same, showing personal offline Crystal earnings and the offer to double them.
+Guild-Wide Production Report:
+Presents the aggregated global stats, fetched using
+ fetchWorldVariableAsync.
+Example Text:
+"Guild Operations Report (Last 24h):"
+"Total Crystals Mined: [daily:crystalsMined]"
+"Successful Rebirths Initiated: [daily:rebirthsCompleted]"
+"Corporate Directives Fulfilled: [daily:questsCompleted]"
+Personal Leaderboard Activity:
+This personalized module will be retained, as it provides direct social context.
+Example Text: "Your Rank on the 'Peak CPS' leaderboard has climbed 5 spots to #125!"
+Friend Activity (Future Goal):
+Your idea to show friend-specific activity, like a rebirth, is fantastic for social engagement.
+While the API does not currently allow us to directly query a friend's specific game events, the
+ Social.isPlayerFollowing and related functions in the new documentation present exciting future possibilities. We will keep this as a high-priority feature to investigate as the platform evolves.
+5.13 Minigames & Social Competitions [📋 PLANNED]
+To enhance long-term retention, provide gameplay variety, and foster a robust social ecosystem, a suite of competitive minigames will be integrated into the core experience.
+5.13.1 - "10 Second Precision" Daily Game
+Design Philosophy: A daily appointment mechanic designed to reward player skill and create a compelling reason to log in each day.
+Player Goal: To test their internal clock by stopping a hidden timer at exactly 10.000 seconds.
+Gameplay Flow:
+The minigame is accessible once per 24-hour period from a dedicated menu.
+Upon starting, a timer appears and visibly counts: "1... 2... 3..."
+The numbers then vanish. The timer continues running silently in the background.
+The player must estimate the remaining 7 seconds and press the "Stop" button at the moment they believe 10 seconds have elapsed.
+A results pop-up immediately shows their time (e.g., "9.987s") and any reward earned.
+Reward Structure:
+Jackpot: Stopping the timer precisely at 10.000s awards 25 Hyper-Credits.
+Consolation Prize: Stopping within a narrow "near miss" window (e.g., 9.950s - 10.050s) awards a significant sum of Crystals.
+5.13.2 - "60-Second Blitz" (Asynchronous Competition)
+Design Philosophy: A high-energy, asynchronous competitive mode that allows players to compete for high scores on a global leaderboard at their own convenience.
+Player Goal: To generate the maximum number of Crystals possible within a 60-second window.
+Gameplay Flow:
+A player can initiate a "Blitz" from the main menu, subject to a multi-hour cooldown.
+For 60 seconds, the game enters a "Blitz Mode" with enhanced visual effects and audio cues. All player clicks have a massively increased value.
+The total Crystals earned during this period constitutes their "Blitz Score."
+The score is automatically submitted to the dedicated "Blitz Score" leaderboard.
+5.13.3 - "Live Mining Blitz" Duels (Real-Time PvP)
+Design Philosophy: A direct, synchronous player-vs-player duel to create high-stakes social interaction and direct competition between players in the same world instance.
+Player Goal: To out-click a live opponent in a 60-second match.
+Gameplay Flow:
+Challenge: When more than one player is in an instance, a "Challenge" UI element becomes visible. A player can select an opponent and send a duel invitation.
+Acceptance: The challenged player receives a pop-up and can accept or decline.
+Transition: Upon acceptance, the server hides the main game UI for both players and transitions them to a dedicated, shared DuelUI screen.
+Duel: A "3-2-1-GO!" countdown initiates the match. Both players click their respective crystals for 60 seconds. A server-side script manages the timer and scores authoritatively to ensure fairness.
+Results: A results screen declares the winner and shows a breakdown of stats (total clicks, peak CPS, etc.). The winner is awarded 5 Hyper-Credits.
+5.13.4 - "Hourly Blitz Prime Time" (World Event)
+Design Philosophy: A scheduled, recurring world event that creates appointment play and a server-wide sense of urgency and shared purpose.
+Player Goal: To achieve a high score on a prestigious, time-limited leaderboard.
+Gameplay Flow:
+Activation: At the top of every hour, a 10-minute "Prime Time" window automatically begins across all world instances.
+Notification: A prominent UI banner appears for all players: "Blitz Prime Time is Active! Compete on the Prime Time Leaderboard for 10 minutes!"
+Participation: Scores from any "60-Second Blitz" played during this window are submitted to the special "Prime Time Leaderboard."
+Reward Structure: At the end of each week, significant rewards (large amounts of Hyper-Credits, exclusive cosmetic badges) are distributed to the top-ranking players on the Prime Time leaderboard.
+
+
+6.0 Monetization (IAPs)
+[📋 PLANNED] Our monetization strategy is player-centric, focusing on offering value rather than creating friction . We will use the
+IWPSellerGizmo API to implement these.
+6.1 Premium Currency: Hyper-Credits Hyper-Credits (HC) are the game's premium currency, purchased with real money. They are used to buy time skips, powerful temporary boosts, and other high-value items from the in-game shop.
+6.2 Hyper-Credit Bundles Players can purchase Hyper-Credits in bundles, with larger packs offering better value to encourage higher investment.
+Hyper-Credits
+Bonus Value
+Estimated Price
+250 HC
+-
+$0.99
+550 HC
+10% Bonus
+$1.99
+1,200 HC
+20% Bonus
+$3.99
+10,000 HC
+25% Bonus
+$9.99
+
+
+6.3 Shop Items & Offers:
+Permanent Upgrades (Real Money):
+2x Crystal Doubler: Permanently doubles all Crystal income. ($4.99 estimate).
+Offline Cache Extenders: Permanently increase the offline earnings time limit (e.g., to 4, 6, or 12 hours).
+Consumables (Purchased with Hyper-Credits):
+Time Warps: Instantly gain 4 or 12 hours of Crystal production.
+Production Boosts: Generator Overdrive and Click Frenzy.
+Cooldown Skips: Instantly reset the cooldown on Timed Power Boosts.
+Contextual Offers:
+Offline Doubler: Upon returning, players can spend HC to double the Crystals they earned while away.
+
+
+7.0 Audio & Visual Effects
+7.1 Sound Design
+[📋 PLANNED] A rich soundscape will provide constant, satisfying feedback for all player interactions. This will be managed by a central SoundManager script that plays sounds from AudioGizmo assets.
+UI Feedback:
+A crisp, sci-fi "tick" for all standard button presses.
+A satisfying "cha-ching" or "power-up" sound when buying or upgrading a generator.
+A triumphant jingle for quest completion.
+A distinct "power-up ready" sound for when a boost cooldown finishes.
+Ambient Music:
+A single, non-intrusive ambient electronic track that evokes the vastness and wonder of space.
+7.2 UI Animations ("Juice")
+[⏳ IN PROGRESS] We will use the AnimatedBinding and Animation API to make the UI feel dynamic and responsive.
+Click Feedback: [✅ IMPLEMENTED] When the main crystal is clicked, a floating, colored number animates up and fades out to show the Crystals earned.
+Button Presses: [✅ IMPLEMENTED] The main drill button performs a satisfying "bop" animation sequence on click. Other buttons visually react on press.
+Milestone Celebrations: [📋 PLANNED]
+Evolving Gem Event: When the main clicker crystal visually upgrades to a new tier, it will trigger a full celebratory event. Player input will be temporarily disabled while the new crystal plays a powerful pulsating and shaking animation. A large pop-up will appear announcing the discovery, congratulating the player, and including an instructional prompt encouraging them to use the native "Share to Feed" feature. The player will dismiss this pop-up to resume control.
+Background Transition: When a new Depth milestone is reached, the background will perform a smooth cross-fade animation from the old environment to the new one.
+Boost Indicator: [📋 PLANNED] A glowing aura or animated timer will appear to clearly communicate when a boost is active.
+
+8.0 Social & Sharing Strategy [📋 PLANNED] To maximize organic growth, we will actively integrate Meta's platform-level social and sharing features. Our strategy is to encourage players to share their progress and achievements, which creates a direct funnel for new players to discover and join our world.
+8.1 Leaderboard Implementation & Sharing The native Leaderboard Sharing feature is a powerful promotional tool. Since our game is UI-only, we will not use the physical World Leaderboard Gizmo. Instead, we will implement a hybrid system:
+Data Submission: We will create official Leaderboards in the world's Systems menu (e.g., "Peak CPS," "Depth Drilled"). Our GameStateManager script will submit scores to these leaderboards using the this.world.setScoreForPlayer() function. This makes our players' scores available to Meta's sharing system.
+In-Game Display: For displaying leaderboards within our game's UI, we will use a parallel system of Player Persistent Variables (PPVs). Our custom leaderboard UI will read from these PPVs to show rankings. This is necessary because the API does not allow scripts to read scores back from the leaderboard system.
+Promoting Sharing: Our custom leaderboard screen will feature a "Share Your Rank!" button. This button will not trigger the share action directly (as the API does not permit this), but will instead open an instructional pop-up that guides the player on how to use the native share feature in the Horizon menu.
+8.2 Creating Share-Worthy Moments The Mobile Camera and enhanced World Link Sharing features reward visually dynamic and exciting gameplay. Our development will focus on creating moments players are proud to capture and share:
+Visual Progression: Key visual upgrades, such as the Evolving Clicker reaching a new tier or the Depth Progression revealing a new background environment, are perfect shareable moments. We will treat these milestones as major in-game events.
+UI "Juice": We will continue to prioritize satisfying animations, celebratory visual effects, and dynamic feedback for player actions. A lively, responsive UI is far more likely to be recorded and shared than a static one.
+8.3 Live Duels & Social Play [📋 PLANNED] To foster direct social interaction, the "Live Mining Blitz Duels" system will be a core social feature. This synchronous PvP mode encourages friendly rivalries and in-the-moment engagement, moving beyond asynchronous leaderboard competition to create a more dynamic and interactive community within world instances.
+
+
+9. Work to do
+Core Systems & Gameplay Loop
+[✅ IMPLEMENTED] Clicking Mechanic: Players can click to earn Crystals.
+[✅ IMPLEMENTED] Generator System: Players can buy and upgrade 8 different automated generators.
+[✅ IMPLEMENTED] Generator Milestones: Production multipliers are correctly applied when players reach ownership milestones.
+[✅ IMPLEMENTED] Boost System: The backend and UI for timed power-ups (Click Frenzy, Generator Overdrive) are fully functional.
+[✅ IMPLEMENTED] Offline Progress: The system correctly calculates and awards Crystals earned while players are away.
+[✅ IMPLEMENTED] Quest System: The backend logic for tracking and completing quests is functional, including Dark Matter rewards.
+[📋 PLANNED] Exploration (Depth): Implement the logic to change the background image when depth milestones are reached.
+[📋 PLANNED] Rebirth (Prestige): Build the final UI for the endgame Rebirth system.
+UI/UX & Visual Polish
+[✅ IMPLEMENTED] Core Game Screen: The main two-pane layout with the clicker, generator list, and supporting readouts (CPS, Depth) is functional.
+[📋 PLANNED] Expanded Screen Flow:
+Design and build the Main Menu into a proper hub with navigation.
+Build the dedicated screens for Profile/Ranks, Stats/Leaderboards, and the IAP Store.
+[📋 PLANNED] Generator Item Polish: Implement the logic to display the total CPS contribution for each generator type in the list.
+[📋 PLANNED] Evolving Clicker Visuals: Implement the logic that swaps the main crystal's image based on the 10 tiers of click progression.
+[📋 PLANNED] Daily Login Rewards UI: Design and build the dedicated 7-day reward track screen.
+[📋 PLANNED] Accessibility: Implement the setting that allows players to swap the left and right panes of the main game screen.
+[📋 PLANNED] Codex Screen: Design and build the dedicated Codex screen for unlockable artwork and icons.
+Social & Long-Term Retention
+[📋 PLANNED] Player Ranks: Create the system to track Guild Reputation (GR) and display the player's current rank.
+[📋 PLANNED] Leaderboard System:
+Create the official Leaderboards and corresponding PPVs.
+Implement the
+ setScoreForPlayer() calls in GameStateManager.
+Build the custom UI panel to display rankings.
+Create the "Share Your Rank!" instructional pop-up.
+[📋 PLANNED] Global Daily Report System:
+Configure world-level persistent variables (
+daily:crystalsMined, etc.) in the world editor.
+Implement
+ incrementWorldCounter() calls in GameStateManager for key events (Rebirths, Quests).
+Develop the server-side logic for the daily reset of the "daily:" stats.
+Build the "Hyperion Guild Daily Briefing" UI pop-up.
+Integrate the briefing into the welcome-back sequence, fetching and displaying the global stats using
+ fetchWorldVariableAsync.
+
+[📋 PLANNED] Minigames & Social Competitions:
+Implement the "10 Second Precision" daily game.
+Implement the asynchronous "60-Second Blitz" with its own leaderboard.
+Develop the real-time, head-to-head "Live Mining Blitz Duels."
+
+[📋 PLANNED] Hourly Blitz Prime Time Event:
+Develop server-side logic to detect hourly event windows.
+Create UI banner for announcing the event.
+Implement logic to submit scores to a dedicated "Prime Time" leaderboard.
+Design and implement the weekly reward distribution system for top players.
+
+Monetization & Audio
+[📋 PLANNED]
+ Full IAP Implementation: Integrate the IWPSellerGizmo to handle all planned purchases.
+[📋 PLANNED] Sound Design: Implement all planned UI and gameplay sound effects using the SoundManager.
+[📋 PLANNED] Milestone Animations: Design and build the celebratory cinematic events for crystal upgrades and depth progression.
+
+10.0 Overview The Leaderboards system is a core social and retention feature designed to drive long-term competition and provide aspirational goals for players. The system will be comprised of multiple leaderboards catering to different playstyles and will feature a clean, player-centric UI that makes it easy to track personal progress and compare with the community.
+10.1 Leaderboard Categories The game will feature 15 distinct leaderboards, organized into 5 thematic tabs. Of these, 10 will be designated as "Official" leaderboards, which sync with Meta's backend systems and are eligible for social sharing features . These will be marked with a special icon in the UI.
+Tab 1: Progression
+Total Rebirths (Official)
+Guild Reputation (GR) (Official)
+Maximum Depth Drilled (Official)
+Tab 2: Economy 4. Total Crystals Earned (All-Time) (Official) 5. Peak Crystals Per Second (All-Time) (Official) 6. Fastest Rebirth Time (In-Game Only)
+Tab 3: Active Play 7. Total Manual Clicks (All-Time) (In-Game Only) 8. Total Crystals Clicked (All-Time) (In-Game Only) 9. Highest Clicker Tier Unlocked (In-Game Only)
+Tab 4: Minigames 10. 60-Second Blitz High Score (Official) 11. Prime Time Blitz Weekly Wins (Official) 12. Precision Mining Perfect Hits (Official)
+Tab 5: Social & Dedication 13. Live Duel Wins (Official) 14. Longest Daily Login Streak (Official) 15. Live Duel Win Streak (In-Game Only)
+10.2 UI Layout & Functionality The Leaderboards screen will be a dedicated UI panel accessible from the Main Menu. The design is optimized for clarity and mobile interaction.
+Header: A clean title, "HYPERION GUILD LEADERBOARDS."
+Main Tab Navigation: A horizontal bar at the top with five buttons for the main categories: [Progression], [Economy], [Active Play], [Minigames], [Social & Dedication]. The active tab will be visually highlighted.
+Sub-Leaderboard Selection: A vertical list of three buttons will appear on the left-hand side, corresponding to the leaderboards in the active category. The selected leaderboard in this list determines what data is shown in the main display panel. The 10 "Official" leaderboards will be marked with a Horizon Worlds logo.
+Time Filters: To the top right of the main display panel, two filter buttons will be present: [All-Time] and [Weekly]. This allows players to toggle the timeframe for the currently selected leaderboard. The Weekly filter will reset every Monday to keep competition fresh.
+Main Display Panel: This is the primary content area and is divided into two distinct sections:
+Top 10 Rankings: This section is always visible at the top of the panel. It displays a list of Ranks 1 through 10, showing each player's Rank, Operator Name, and Score. For weekly leaderboards, the top 3 ranks will also display an icon indicating their Hyper-Credit prize.
+Your Ranking Panel: This is a separate, visually distinct panel located directly beneath the Top 10 list.
+Conditional Visibility: This panel is only visible if the player's current rank is outside the Top 10. If the player is in the top 10, their entry is already shown above and this panel is hidden.
+Content: This panel will show three entries: the player directly above them, the player's own highlighted entry, and the player directly below them. This provides crucial context about their immediate competition.
+Social Integration: A "Share Your Rank!" button will be displayed near the player's entry (either in the Top 10 list or in the "Your Ranking" panel) for any of the 10 "Official" leaderboards.
+
+11.0 Overview & Design Philosophy The Main Menu is the central navigation hub for Idle Crystal Clicker. It is the first interactive screen the player encounters after the initial "Daily Briefing" pop-up. Its primary purpose is to welcome the player back, provide high-level updates, and offer clear, intuitive navigation to all other game systems. The design will adhere to the "sci-fi command deck" aesthetic, presenting a clean, professional, and immersive interface.
+11.1 UI Layout & Components The layout is based on the initial mockup, organized into distinct functional zones for clarity on mobile and screen-based platforms.
+Welcome Message: A personalized greeting at the top of the screen that dynamically displays the player's name at th top left (e.g., "Welcome To Idle Crystal Clicker, {NAME}").
+Central Panel (Update Log) Left Panel: A prominent panel in the center of the screen reserved for "UPDATE LOG, NEWS, EVENTS, AND MORE." This is our primary LiveOps communication channel for engaging with the community. This goeas on the left side of the screen
+Main Navigation Buttons Right Panel: A clean, vertical stack of large, pressable buttons that navigate to the game's core screens:
+CONTINUE GAME (This will be a "smart button" that reads "NEW GAME" if no save data is detected).
+RANKS, & STATS
+LEADERBOARDS
+STORE/Rewards
+CODEX
+Global Stats Ticker Under Buttons Right Panel: [📋 PLANNED] A small, thematic ticker at the bottom of the screen displaying interesting global stats from the "Daily Report" to make the world feel alive and active.
+11.2 Technical Implementation & Scripting To ensure a clean and performant architecture, the UI will be split into two primary components:
+MainMenuUI:
+This will be a dedicated Custom UI Gizmo controlled by its own script, MainMenuUI.ts.
+This script will be responsible for handling all logic on the main menu, including button navigation and displaying news updates.
+GameUI:
+This is the separate Custom UI Gizmo for the core gameplay, controlled by GameUI.ts.
+This UI will be hidden by default when a player joins the world.
+UIManager Logic: The central, server-side UIManager.ts script will manage the overall UI state.
+When a player joins, UIManager will ensure the MainMenuUI is visible.
+When a player clicks "CONTINUE GAME" on the MainMenuUI, an event will be sent to the UIManager.
+The UIManager will then hide the MainMenuUI and show the GameUI, seamlessly transitioning the player into the game.
+This two-script approach ensures our game's UI is modular, maintainable, and optimized for performance. The GDD has been updated accordingly.
+
+12.1 Core Principle: Modular Design To ensure the project remains scalable, performant, and maintainable, we will adhere to a modular scripting architecture. Each major game system will be self-contained within its own dedicated "Manager" script (for server-side logic) and, where necessary, its own "UI" script (for client-side rendering). This "separation of concerns" prevents any single script from becoming overly complex.
+12.2 Game Logic Scripts (Server-Side)
+GameStateManager.ts: Manages the core player state for the idle/clicker game, including Crystals, Generators, Quests, and Rebirths. It does not contain any minigame logic.
+MinigameManager.ts (New): Manages all logic for solo minigames, including cooldowns, score calculation, and rewards for "10 Second Precision" and "60-Second Blitz."
+DuelManager.ts (New): Manages all logic for the real-time "Live Mining Blitz Duels," including the challenge flow, match state, authoritative scoring, and rewards.
+12.3 UI Scripts (Client-Side)
+UIManager.ts: The master controller that orchestrates which primary UI is visible to which players (e.g., hiding the MainMenuUI and showing the GameUI).
+MainMenuUI.ts: Renders the main menu and handles navigation. It will also manage the UI pop-ups for the solo minigames.
+GameUI.ts: Renders the core idle/clicker gameplay screen. It communicates with GameStateManager but is unaware of minigames.
+DuelUI.ts (New): Renders the dedicated, real-time interface for the "Live Mining Blitz Duels." It communicates exclusively with DuelManager.
+
+1. Key Learnings about the Horizon Worlds API
+The Horizon Worlds Custom UI API is powerful but has some very specific rules that are different from standard web development. My early mistakes came from not respecting these rules.
+The derive() Rule is Strict: This was the most important lesson. You cannot chain .derive() calls. A Binding can be used to create a DerivedBinding, but that new DerivedBinding does not have a .derive() method of its own.
+Incorrect: const canAfford = crystalCountBinding.derive(...); const isDisabled = canAfford.derive(...);
+Correct: We must derive all final values directly from the original source Binding (e.g., crystalCountBinding), even if it means repeating the initial part of the logic.
+Styling (ViewStyle) is a Specific Subset of CSS: We cannot assume standard web CSS properties will work. We discovered two key examples:
+The gap property does not exist. To create space between elements in a flex layout, we must use margin (e.g., marginLeft, marginBottom).
+There is no borderBottomColor property. To create an active tab indicator, we must use the general borderColor property and then use borderBottomWidth to control which side of the border is visible.
+Local Mode UI Requires an Owner: A UI script with its Execution Mode set to "Local" is completely invisible by default. It will not render for any player until a separate, server-side script (like our UIManager.ts) explicitly sets its .owner property to a specific player. This was the cause of the "UI not loading" issue.
+Component Registration is Universal: All scripts, whether they are a UIComponent or a standard logic component, must extend hz.Component and be registered using hz.Component.register(). My initial use of a Script base class was incorrect.
+Asynchronous Operations are on this.async: Timers like setInterval are not methods of this.world. The correct API is to use this.async.setInterval and this.async.clearInterval.
+2. Key Learnings about Our Project's Architecture
+Beyond the general API rules, we've solidified a very strong and scalable architecture for "Idle Crystal Clicker."
+GameStateManager is the Single Source of Truth: The most important principle for our project is that the server-side GameStateManager.ts is the absolute authority on all game data. The client-side GameUI.ts should never modify its own state directly (like adding crystals when the player clicks).
+Correct Flow: The UI sends an event (e.g., OnManualDrill) to the server. The GameStateManager processes the logic, updates the player's state, and then sends the new, authoritative state back to the UI. This prevents bugs like the depth and click value discrepancies we fixed.
+Events.ts is Our Central Contract: This file is the most critical part of our architecture. Any change to a shared data structure, like adding rebirthCount to the RebirthState, must be done in Events.ts first. Then, all other scripts that use that data structure must be updated to match. This was the cause of our final big batch of errors, and it taught me to always start my changes in the Events.ts file.
+DataManager.ts for Easy Balancing: Keeping all our static numbers—generator costs, quest requirements, milestone values—in one place (DataManager.ts) is incredibly efficient. It allows us to re-balance the entire game economy without touching the complex logic in the other manager scripts.
+By keeping these principles in mind, we can continue to add new features to the game much more quickly and with far fewer errors. I feel much more aligned with your project's structure now, and I'm ready for whatever you want to tackle next.
+
