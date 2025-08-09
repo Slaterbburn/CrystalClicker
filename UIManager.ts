@@ -1,86 +1,42 @@
-import * as hz from 'horizon/core';
-import { 
-    onImagesReady, 
-    onUIReadyForRegistration,
-    sendUIUpdate,
-    spawnUIForPlayer,
-    cleanupUIForPlayer,
-} from './Events';
+import * as hz from 'horizon/core'
 
-export class UIManager extends hz.Component {
-    static propsDefinition = {
-        GameUIAsset: { type: hz.PropTypes.Asset },
-        ImagePreloaderAsset: { type: hz.PropTypes.Asset },
-    };
+/**
+ * UIManager is a server-side script responsible for spawning a personal UI 
+ * for each player and assigning them ownership so they can see it.
+ */
+export class UIManager extends hz.Component<typeof UIManager> {
+  static propsDefinition = {
+    // This requires a "Template Asset" of your GameUI gizmo.
+    GameUIPrefab: { type: hz.PropTypes.Asset },
+  }
 
-    private imagesReady = false;
-    private pendingSpawnQueue: hz.Player[] = [];
-    private playerUIEntities: Map<number, hz.Entity[]> = new Map();
+  start() {
+    // Listen for new players entering the world.
+    this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterWorld, (player) => {
+      this.initPlayerUI(player);
+    });
 
-    start() {
-        this.connectNetworkBroadcastEvent(onImagesReady, () => {
-            this.imagesReady = true;
-            console.log('UIManager: All images are preloaded and ready.');
-            for (const player of this.pendingSpawnQueue) {
-                this.spawnAllUIForPlayer(player);
-            }
-            this.pendingSpawnQueue = [];
-        });
+    // Also handle any players already in the world when the script starts up.
+    this.world.getPlayers().forEach(player => this.initPlayerUI(player));
+  }
 
-        this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterWorld, (player: hz.Player) => {
-            this.handlePlayerEnter(player);
-        });
-
-        this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerExitWorld, (player: hz.Player) => {
-            this.cleanupUIForPlayer(player);
-        });
+  private async initPlayerUI(player: hz.Player) {
+    if (!this.props.GameUIPrefab) {
+      hz.logError("ERROR: The 'GameUIPrefab' property is not set in the UIManager script. The UI will not load for players.");
+      return;
     }
 
-    private handlePlayerEnter(player: hz.Player) {
-        if (this.imagesReady) {
-            this.spawnAllUIForPlayer(player);
-        } else {
-            console.log(`UIManager: Images not ready, queueing UI spawn for ${player.name.get()}`);
-            this.pendingSpawnQueue.push(player);
-        }
+    // [FIXED] Correctly cast the asset to hz.Asset for spawning.
+    const gameUIPrefab = this.props.GameUIPrefab.as(hz.Asset);
+    
+    // Instantiate the UI and assign the player as the creator
+    const [gameUIInstance] = await this.world.spawnAsset(gameUIPrefab);
+
+    // The critical step: Assign ownership to the player to make the UI visible
+    if (gameUIInstance) {
+      gameUIInstance.owner.set(player);
     }
-
-    private async spawnAllUIForPlayer(player: hz.Player) {
-        console.log(`UIManager: Spawning all UI for ${player.name.get()}`);
-        if (!this.playerUIEntities.has(player.id)) {
-            this.playerUIEntities.set(player.id, []);
-        }
-
-        // Spawn the main GameUI
-        if (this.props.GameUIAsset) {
-            const [uiEntity] = await this.world.spawnAsset(this.props.GameUIAsset, new hz.Vec3(0, 0, 0));
-            if (uiEntity) {
-                uiEntity.owner.set(player);
-                this.playerUIEntities.get(player.id)?.push(uiEntity);
-            }
-        }
-
-        // Spawn the preloader (which is just an invisible UI to hold textures)
-        if (this.props.ImagePreloaderAsset) {
-            const [preloaderEntity] = await this.world.spawnAsset(this.props.ImagePreloaderAsset, new hz.Vec3(0, -100, 0)); // Spawn it out of sight
-             if (preloaderEntity) {
-                preloaderEntity.owner.set(player);
-                this.playerUIEntities.get(player.id)?.push(preloaderEntity);
-            }
-        }
-    }
-
-    private async cleanupUIForPlayer(player: hz.Player) {
-        const entities = this.playerUIEntities.get(player.id);
-        if (entities) {
-            console.log(`UIManager: Cleaning up ${entities.length} UI entities for ${player.name.get()}`);
-            for (const entity of entities) {
-                if (entity.exists()) {
-                    await this.world.deleteAsset(entity, true);
-                }
-            }
-            this.playerUIEntities.delete(player.id);
-        }
-    }
+  }
 }
+
 hz.Component.register(UIManager);
