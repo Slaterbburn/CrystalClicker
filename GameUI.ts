@@ -6,7 +6,7 @@ import {
 } from 'horizon/ui'
 import {
   Generator, QuestDisplayData, OnUpdatePlayerState, OnManualDrill, OnBuyGenerator, ClickMilestone,
-  OnGemCountUpdate, OnActivateBoost, Boost, OnBoostStateUpdate, RebirthState, OnPlayerRebirth,
+  OnGemCountUpdate, RebirthState, OnPlayerRebirth,
   OnShowOfflineProgress
 } from './Events'
 
@@ -17,30 +17,31 @@ type FloatingNumberState = {
     visibleBinding: Binding<boolean>;
 };
 
-type PurchaseAmount = 1 | 10 | 50 | 'MAX';
+type RightPanelTab = 'Generators' | 'Rebirth';
 
 export class GameUI extends UIComponent<typeof GameUI> {
   static propsDefinition = {
     BackgroundImage: { type: hz.PropTypes.Asset },
     DiamondIcon: { type: hz.PropTypes.Asset },
-    BoostIcon: { type: hz.PropTypes.Asset },
+    GeneratorIcon: { type: hz.PropTypes.Asset },
+    RebirthIcon: { type: hz.PropTypes.Asset },
   }
+  
+  // [FIXED] Use a private variable to track visibility state instead of .get()
+  private isVisible: boolean = false;
+  private isVisibleBinding = new Binding(false); // Hidden by default.
 
-  private readonly purchaseAmountBinding = new Binding<PurchaseAmount>(1);
-  // [FIXED] Store the purchase amount in a regular variable for script access.
-  private purchaseAmount: PurchaseAmount = 1;
-
+  private readonly rightPanelTabBinding = new Binding<RightPanelTab>('Generators');
   private readonly crystalCountBinding = new Binding(0)
   private readonly crystalsPerClickBinding = new Binding(1);
   private readonly generatorsBinding = new Binding<Generator[]>([])
   private readonly currentQuestBinding = new Binding<QuestDisplayData>({id: 0, description: "Loading Quest..."})
-  private readonly currentScreenBinding = new Binding<'menu' | 'game'>('menu')
   private readonly diamondScaleBinding = new AnimatedBinding(1);
   private readonly nextClickMilestoneBinding = new Binding<ClickMilestone | null>(null);
   private readonly totalGPSBinding = new Binding(0);
   private readonly depthBinding = new Binding(0);
-  private readonly boostsBinding = new Binding<Boost[]>([]);
-  private readonly rebirthStateBinding = new Binding<RebirthState>({ darkMatter: 0, peakCPS: 0 });
+  private readonly rebirthStateBinding = new Binding<RebirthState>({ darkMatter: 0, peakCPS: 0, rebirthCount: 0 });
+  private readonly totalClicksBinding = new Binding(0);
   
   private readonly showOfflineProgressBinding = new Binding(false);
   private readonly offlineGemsBinding = new Binding("0");
@@ -52,15 +53,9 @@ export class GameUI extends UIComponent<typeof GameUI> {
 
   private readonly floatingNumberPool: FloatingNumberState[] = [];
   private nextFloatingNumberIndex = 0;
-  private readonly FLOATING_NUMBER_POOL_SIZE = 10;
+  private readonly FLOATING_NUMBER_POOL_SIZE = 15;
   
   start() {
-    const localPlayer = this.world.getLocalPlayer()
-    if (localPlayer && localPlayer !== this.world.getServerPlayer()) {
-      localPlayer.enterFocusedInteractionMode()
-      hz.PlayerControls.disableSystemControls()
-    }
-
     this.connectNetworkEvent(this.world.getLocalPlayer(), OnUpdatePlayerState, (data) => {
         this.crystalCount = data.crystalCount;
         this.crystalsPerClick = data.crystalsPerClick;
@@ -72,6 +67,7 @@ export class GameUI extends UIComponent<typeof GameUI> {
         this.totalGPSBinding.set(data.totalGPS);
         this.depthBinding.set(data.depth);
         this.rebirthStateBinding.set(data.rebirthState);
+        this.totalClicksBinding.set(data.totalManualClicks);
     });
 
     this.connectNetworkEvent(this.world.getLocalPlayer(), OnGemCountUpdate, (data) => {
@@ -80,10 +76,6 @@ export class GameUI extends UIComponent<typeof GameUI> {
         this.totalGPSBinding.set(data.totalGPS);
     });
     
-    this.connectNetworkEvent(this.world.getLocalPlayer(), OnBoostStateUpdate, (data) => { 
-        this.boostsBinding.set(data.boosts); 
-    });
-
     this.connectNetworkEvent(this.world.getLocalPlayer(), OnShowOfflineProgress, (data) => {
         this.offlineGemsBinding.set(this.formatCompactNumber(data.crystalsEarned));
         const hours = Math.floor(data.durationSeconds / 3600);
@@ -100,11 +92,7 @@ export class GameUI extends UIComponent<typeof GameUI> {
             opacityBinding: new AnimatedBinding(0), visibleBinding: new Binding(false)
         });
     }
-
-    const mainView = UINode.if(
-      this.currentScreenBinding.derive(s => s === 'menu'),
-      this.renderMenuScreen(), this.renderGameScreen(),
-    );
+    
     const children: UINode[] = [];
     if (this.props.BackgroundImage) {
         children.push(Image({
@@ -112,55 +100,60 @@ export class GameUI extends UIComponent<typeof GameUI> {
             style: { position: 'absolute', width: '100%', height: '100%' },
         }));
     }
-    children.push(View({ style: { position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.5)' } }));
-    children.push(mainView);
+    
+    children.push(UINode.if(this.isVisibleBinding, this.renderGameScreen()));
     children.push(UINode.if(this.showOfflineProgressBinding, this.renderOfflineProgressPopup()));
+    
     return View({ style: { width: '100%', height: '100%' }, children: children });
+  }
+  
+  show(): void {
+    if (!this.isVisible) {
+      const localPlayer = this.world.getLocalPlayer()
+      if (localPlayer && localPlayer !== this.world.getServerPlayer()) {
+        localPlayer.enterFocusedInteractionMode();
+        hz.PlayerControls.disableSystemControls();
+      }
+      this.isVisible = true;
+      this.isVisibleBinding.set(true);
+    }
+  }
+
+  hide(): void {
+    if (this.isVisible) {
+      const localPlayer = this.world.getLocalPlayer()
+       if (localPlayer && localPlayer !== this.world.getServerPlayer()) {
+        localPlayer.exitFocusedInteractionMode();
+        hz.PlayerControls.enableSystemControls();
+      }
+      this.isVisible = false;
+      this.isVisibleBinding.set(false);
+    }
   }
 
   private triggerFloatingNumber(text: string) {
     const numberState = this.floatingNumberPool[this.nextFloatingNumberIndex];
     this.nextFloatingNumberIndex = (this.nextFloatingNumberIndex + 1) % this.FLOATING_NUMBER_POOL_SIZE;
+    
     numberState.visibleBinding.set(true);
     numberState.textBinding.set(text);
     numberState.yBinding.set(0);
     numberState.opacityBinding.set(1);
-    numberState.yBinding.set(Animation.timing(-100, { duration: 1500, easing: Easing.out(Easing.quad) }), () => {
-        numberState.visibleBinding.set(false);
+    
+    numberState.yBinding.set(Animation.timing(-100, { duration: 1500, easing: Easing.out(Easing.quad) }), (finished: boolean) => {
+        if (finished) { numberState.visibleBinding.set(false); }
     });
     numberState.opacityBinding.set(Animation.timing(0, { duration: 1500, easing: Easing.in(Easing.quad) }));
   }
 
   private formatCompactNumber(value: number): string {
     const num = Math.floor(value);
+    if (num >= 1e15) return (num / 1e15).toFixed(2).replace(/\.00$/, '') + 'Q';
     if (num >= 1e12) return (num / 1e12).toFixed(2).replace(/\.00$/, '') + 'T';
     if (num >= 1e9) return (num / 1e9).toFixed(2).replace(/\.00$/, '') + 'B';
     if (num >= 1e6) return (num / 1e6).toFixed(2).replace(/\.00$/, '') + 'M';
     if (num >= 1e3) return (num / 1e3).toFixed(2).replace(/\.00$/, '') + 'K';
-    return num.toString();
-  }
-
-  private formatTime(milliseconds: number): string {
-    if (milliseconds <= 0) { return "Ready"; }
-    const totalSeconds = Math.ceil(milliseconds / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
-
-  private renderMenuScreen(): UINode {
-    return View({
-      style: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
-      children: [
-        Text({ text: 'Idle Crystal Clicker', style: { color: 'white', fontSize: 80, marginBottom: 10, textShadowColor: '#000000', textShadowOffset: [3, 3] } }),
-        Text({ text: 'Click to build your empire!', style: { color: 'white', fontSize: 24, marginBottom: 40, textShadowColor: '#000000', textShadowOffset: [2, 2] } }),
-        Pressable({
-          onClick: () => this.currentScreenBinding.set('game'),
-          children: [Text({ text: 'Play Game', style: { color: 'white', fontSize: 32 } })],
-          style: { backgroundColor: '#34A853', padding: 25, borderRadius: 15, borderWidth: 2, borderColor: '#FFFFFF' }
-        })
-      ]
-    });
+    return num.toLocaleString();
   }
   
   private renderOfflineProgressPopup(): UINode {
@@ -190,198 +183,217 @@ export class GameUI extends UIComponent<typeof GameUI> {
 
   private renderGameScreen(): UINode {
     return View({
-      style: { width: '100%', height: '100%', flexDirection: 'row', padding: 20 },
-      children: [ this.renderClickerPanel(), this.renderStoreAndQuestPanel() ],
+      style: { width: '100%', height: '100%', flexDirection: 'row', padding: 20, paddingTop: 60, backgroundColor: 'rgba(0,0,0,0.5)' },
+      children: [ 
+          this.renderClickerPanel(), 
+          View({style: {width: 20}}),
+          this.renderStoreAndQuestPanel() 
+        ],
     })
   }
 
   private renderClickerPanel(): UINode {
-    let clickerContent: UINode;
-    if (this.props.DiamondIcon) {
-        clickerContent = Image({ source: ImageSource.fromTextureAsset(this.props.DiamondIcon.as(hz.TextureAsset)), style: { width: 256, height: 256 } });
-    } else {
-        clickerContent = View({ style: { backgroundColor: '#4A90E2', padding: 20, borderRadius: 10, borderWidth: 2, borderColor: '#FFFFFF' }});
-    }
+    const clickerContent = this.props.DiamondIcon 
+        ? Image({ source: ImageSource.fromTextureAsset(this.props.DiamondIcon.as(hz.TextureAsset)), style: { width: 256, height: 256 } })
+        : View({ style: { backgroundColor: '#4A90E2', width: 256, height: 256, borderRadius: 128 }});
+
     return View({
-      style: { flex: 2, justifyContent: 'center', alignItems: 'center', padding: 10, marginRight: 10 },
+      style: { flex: 2, justifyContent: 'center', alignItems: 'center' },
       children: [
         View({
           style: { width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.5)', borderRadius: 10, justifyContent: 'center', alignItems: 'center', position: 'relative' },
           children: [
             View({
-                style: { position: 'absolute', top: '50%', marginTop: -120, zIndex: 15 },
+                style: { position: 'absolute', top: '50%', marginTop: -120, zIndex: 15, alignItems: 'center' },
                 children: this.floatingNumberPool.map(num => 
                     UINode.if(num.visibleBinding, View({
-                        style: { transform: [{ translateY: num.yBinding }], opacity: num.opacityBinding },
+                        style: { position: 'absolute', transform: [{ translateY: num.yBinding }], opacity: num.opacityBinding },
                         children: [ Text({ text: num.textBinding, style: { fontSize: 48, fontWeight: 'bold', color: '#FFD700', textShadowColor: 'black', textShadowOffset: [2, 2], textShadowRadius: 2 }}) ]
                     }))
                 )
             }),
             Pressable({
               onClick: (player) => {
-                this.crystalCount += this.crystalsPerClick;
-                this.crystalCountBinding.set(this.crystalCount);
                 this.triggerFloatingNumber(`+${this.formatCompactNumber(this.crystalsPerClick)}`);
                 this.sendNetworkBroadcastEvent(OnManualDrill, { player });
+                
                 if (this.gemAnimationInProgress) return;
                 this.gemAnimationInProgress = true;
                 const clickAnimation = Animation.sequence( Animation.timing(0.9, { duration: 75 }), Animation.timing(1.0, { duration: 75 }) );
                 this.diamondScaleBinding.set(clickAnimation, () => { this.gemAnimationInProgress = false; });
               },
-              style: { transform: [{ scale: this.diamondScaleBinding }], zIndex: 10, marginBottom: 20, },
+              style: { transform: [{ scale: this.diamondScaleBinding }], zIndex: 10, marginBottom: 20 },
               children: [clickerContent],
             }),
-            Text({ text: this.crystalCountBinding.derive(count => `Crystals: ${this.formatCompactNumber(count)}`), style: { color: 'white', fontSize: 60, textShadowColor: '#000000', textShadowOffset: [2, 2] } }),
+            Text({ text: this.crystalCountBinding.derive(count => `${this.formatCompactNumber(count)} Crystals`), style: { color: 'white', fontSize: 60, textShadowColor: '#000000', textShadowOffset: [2, 2] } }),
             View({ style: { flexDirection: 'row', marginTop: 10 }, children: [
                 Text({ text: this.totalGPSBinding.derive(gps => `CPS: ${this.formatCompactNumber(gps)}`), style: { color: '#B2F3FF', fontSize: 22, textShadowColor: '#000000', textShadowOffset: [1, 1], marginRight: 15 } }),
-                Text({ text: this.depthBinding.derive(d => `Depth: ${this.formatCompactNumber(d)}m`), style: { color: '#B2F3FF', fontSize: 22, textShadowColor: '#000000', textShadowOffset: [1, 1], marginLeft: 15 } }),
+                
+                View({ style: { flexDirection: 'row', alignItems: 'center', marginLeft: 15 }, children: [
+                    Text({ text: this.depthBinding.derive(d => `Depth: ${this.formatCompactNumber(d)}m`), style: { color: '#B2F3FF', fontSize: 22, textShadowColor: '#000000', textShadowOffset: [1, 1] } }),
+                    Text({ text: this.rebirthStateBinding.derive((rs: RebirthState) => ` (+${(rs.darkMatter * 1).toFixed(0)}%)`), style: { color: '#ab47bc', fontSize: 20, fontWeight: 'bold' } }),
+                ]}),
             ]}),
-            Text({ text: this.nextClickMilestoneBinding.derive(milestone => {
-                if (milestone) { return `Next Upgrade at ${this.formatCompactNumber(milestone.clicks)} Clicks: ${milestone.crystalsPerClick} Crystals per Click!`; }
-                return "Click Power Maxed Out!";
-            }), style: { color: '#FFD700', fontSize: 18, marginTop: 10 }}),
-            View({ style: { position: 'absolute', bottom: 20, flexDirection: 'row' }, children: DynamicList({ data: this.boostsBinding, renderItem: (boost: Boost) => this.renderBoostButton(boost) }) })
+            View({ style: { flexDirection: 'row', alignItems: 'center', marginTop: 10}, children: [
+                Text({ text: 'Current: ', style: { color: '#FFD700', fontSize: 18 } }),
+                Text({ text: this.crystalsPerClickBinding.derive(cpc => `${this.formatCompactNumber(cpc)}/click`), style: { color: 'white', fontSize: 18 } }),
+                Text({ text: this.nextClickMilestoneBinding.derive(milestone => {
+                    if (milestone) {
+                        return ` - Next at ${this.formatCompactNumber(milestone.clicks)} clicks`;
+                    }
+                    return " - Power Maxed!";
+                }), style: { color: '#FFD700', fontSize: 18, marginLeft: 8 }}),
+            ]})
           ]
         })
       ],
     })
   }
-
-  private renderBoostButton(boost: Boost): UINode {
-    const now = Date.now();
-    const isOnCooldown = now < boost.cooldownEndsAt;
-    const isReady = !boost.isActive && !isOnCooldown;
-    const buttonText = boost.isActive ? this.formatTime(boost.activeEndsAt - now) : (isOnCooldown ? this.formatTime(boost.cooldownEndsAt - now) : 'Activate');
-    
-    const activeBorderColor = '#FFD700';
-
-    return Pressable({
-        disabled: !isReady,
-        onClick: (player) => this.sendNetworkBroadcastEvent(OnActivateBoost, { player, boostId: boost.id }),
-        style: {
-            width: 150, height: 150, borderRadius: 75, marginHorizontal: 15,
-            backgroundColor: boost.isActive ? '#FFC107' : (isReady ? '#4CAF50' : '#607D8B'),
-            borderWidth: 4, 
-            borderColor: boost.isActive ? activeBorderColor : 'white',
-            justifyContent: 'center', alignItems: 'center',
-            shadowColor: 'black', shadowOffset: [3, 3], shadowRadius: 5,
-        },
-        children: [
-            this.props.BoostIcon ? Image({ source: ImageSource.fromTextureAsset(this.props.BoostIcon.as(hz.TextureAsset)), style: { width: 64, height: 64, marginBottom: 5 }}) : UINode.if(false),
-            Text({ text: boost.name, style: { color: 'white', fontSize: 16, fontWeight: 'bold' } }),
-            Text({ text: buttonText, style: { color: 'white', fontSize: 18 } })
-        ]
-    });
-  }
-
+  
   private renderStoreAndQuestPanel(): UINode {
     return View({
-      style: { flex: 1.5, flexDirection: 'column', padding: 10, marginLeft: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10 },
+      style: { flex: 1.5, flexDirection: 'column', backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10 },
       children: [
-        this.renderRebirthPanel(),
-        Text({ text: 'Generator Bay', style: { color: 'white', fontSize: 36, marginBottom: 10, marginTop: 10 } }),
-        this.renderPurchaseAmountToggle(),
-        ScrollView({ style: { flex: 1, marginTop: 10 }, children: DynamicList({ data: this.generatorsBinding, renderItem: (item: Generator) => this.renderGeneratorItem(item) }) }),
-        Text({ text: 'Current Quest', style: { color: 'white', fontSize: 36, marginTop: 20, marginBottom: 10 } }),
+        this.renderTabNavigation(),
+        View({ style: { flex: 1, padding: 15 }, children: [
+            UINode.if(this.rightPanelTabBinding.derive(tab => tab === 'Generators'), this.renderGeneratorPanel()),
+            UINode.if(this.rightPanelTabBinding.derive(tab => tab === 'Rebirth'), this.renderRebirthPanel()),
+        ]}),
         this.renderCurrentQuest(),
       ],
     })
   }
   
-  private renderPurchaseAmountToggle(): UINode {
-      const amounts: PurchaseAmount[] = [1, 10, 50, 'MAX'];
-      
-      const buttonStyle: ViewStyle = {
-          flex: 1, padding: 10, borderRadius: 5,
-          alignItems: 'center', marginHorizontal: 5, borderColor: '#ecf0f1',
-      };
+  private renderTabNavigation(): UINode {
+    const tabs: RightPanelTab[] = ['Generators', 'Rebirth'];
+    const icons: {[key in RightPanelTab]: hz.Asset | undefined} = {
+        'Generators': this.props.GeneratorIcon,
+        'Rebirth': this.props.RebirthIcon
+    };
 
-      return View({
-          style: { flexDirection: 'row', justifyContent: 'space-around' },
-          children: amounts.map(amount => 
-              Pressable({
-                  onClick: () => {
-                      this.purchaseAmountBinding.set(amount);
-                      this.purchaseAmount = amount;
-                  },
-                  // [FIXED #2] Apply bindings to individual style properties, not the whole style object.
-                  style: {
-                      ...buttonStyle,
-                      backgroundColor: this.purchaseAmountBinding.derive(current => current === amount ? '#3498db' : '#2c3e50'),
-                      borderWidth: this.purchaseAmountBinding.derive(current => current === amount ? 2 : 0),
-                  },
-                  children: [ Text({ text: `x${amount}`, style: { color: 'white', fontSize: 18 } }) ]
-              })
-          )
-      });
+    const tabStyle: ViewStyle = {
+      flex: 1, padding: 15, alignItems: 'center', justifyContent: 'center',
+      borderBottomWidth: 4, flexDirection: 'row', 
+    };
+
+    return View({
+        style: { flexDirection: 'row', borderBottomWidth: 2, borderColor: '#555' },
+        children: tabs.map(tab => 
+            Pressable({
+                onClick: () => this.rightPanelTabBinding.set(tab),
+                style: {
+                    ...tabStyle,
+                    borderColor: this.rightPanelTabBinding.derive(current => current === tab ? '#3498db' : 'transparent'),
+                },
+                children: [
+                    icons[tab] ? Image({ source: ImageSource.fromTextureAsset(icons[tab]!.as(hz.TextureAsset)), style: {width: 24, height: 24, marginRight: 10}}) : UINode.if(false),
+                    Text({ text: tab, style: { 
+                        color: this.rightPanelTabBinding.derive(current => current === tab ? 'white' : '#aaa'), 
+                        fontSize: 20 
+                    } })
+                ]
+            })
+        )
+    });
   }
 
+  private renderGeneratorPanel(): UINode {
+      return View({ style: {flex: 1, flexDirection: 'column'}, children: [
+          Text({ text: 'Generator Bay', style: { color: 'white', fontSize: 36, marginBottom: 10 } }),
+          ScrollView({ style: { flex: 1, marginTop: 10 }, children: 
+              DynamicList({ data: this.generatorsBinding, renderItem: (item: Generator) => this.renderGeneratorItem(item) }) 
+          }),
+      ]});
+  }
+  
   private renderRebirthPanel(): UINode {
-    const rebirthCrystalCost = 1e15;
-    const canRebirth = this.crystalCountBinding.derive(crystals => crystals >= rebirthCrystalCost);
+    const rebirthDarkMatterCost = 10;
+    const canRebirth = this.rebirthStateBinding.derive(rs => rs.darkMatter >= rebirthDarkMatterCost);
     
     const darkMatterBonusText = this.rebirthStateBinding.derive((rs: RebirthState) => {
-        const bonus = 1 + (rs.darkMatter * 0.02);
-        return `Global Bonus: x${bonus.toFixed(2)}`;
+        const bonus = 1 + (rs.darkMatter * 0.01);
+        return `Your current Dark Matter provides a x${bonus.toFixed(2)} global production bonus.`;
     });
 
     return View({
-        style: { padding: 10, backgroundColor: 'rgba(74, 20, 140, 0.5)', borderRadius: 10, alignItems: 'center' },
+        style: { flex: 1, padding: 10, backgroundColor: 'rgba(74, 20, 140, 0.2)', borderRadius: 10, alignItems: 'center' },
         children: [
-            Text({ text: 'The Hyperion Core', style: { color: '#e1bee7', fontSize: 24, marginBottom: 5 } }),
-            Text({ text: this.rebirthStateBinding.derive(rs => `Dark Matter: ${rs.darkMatter}`), style: { color: 'white', fontSize: 18 } }),
-            Text({ text: darkMatterBonusText, style: { color: '#ab47bc', fontSize: 18, marginBottom: 10 } }),
+            Text({ text: 'The Hyperion Core', style: { color: '#e1bee7', fontSize: 36, marginBottom: 10 } }),
+            Text({ text: 'Reset your progress to earn Dark Matter, providing a permanent boost to all future runs.', style: { color: '#ddd', fontSize: 16, textAlign: 'center', marginBottom: 20 } }),
+            Text({ text: this.rebirthStateBinding.derive(rs => `Dark Matter: ${rs.darkMatter}`), style: { color: 'white', fontSize: 24, fontWeight: 'bold' } }),
+            Text({ text: darkMatterBonusText, style: { color: '#ab47bc', fontSize: 18, marginBottom: 20 } }),
             UINode.if( canRebirth,
                 Pressable({
                     onClick: (player) => this.sendNetworkBroadcastEvent(OnPlayerRebirth, { player }),
-                    children: [Text({ text: 'Rebirth', style: { color: 'white', fontSize: 20 } })],
-                    style: { padding: 10, borderRadius: 5, backgroundColor: '#7b1fa2' }
+                    children: [Text({ text: 'Rebirth Now', style: { color: 'white', fontSize: 24 } })],
+                    style: { paddingVertical: 15, paddingHorizontal: 30, borderRadius: 10, backgroundColor: '#7b1fa2', borderWidth: 2, borderColor: '#e1bee7'}
                 }),
-                Text({ text: `Reach ${this.formatCompactNumber(rebirthCrystalCost)} Crystals to Rebirth`, style: { color: '#ce93d8' } })
-            )
+                View({ style: {alignItems: 'center'}, children: [
+                    Text({ text: 'Next Rebirth Cost:', style: { color: '#ce93d8', fontSize: 18}}),
+                    Text({ text: `${rebirthDarkMatterCost} Dark Matter`, style: { color: 'white', fontSize: 22}}),
+                ]})
+            ),
         ]
     });
   }
 
   private renderGeneratorItem(item: Generator): UINode {
-    const costIncreaseRatio = 1.15;
-    
-    const costText = this.purchaseAmountBinding.derive(amount => {
-        if (amount === 1) {
-            return `Cost: ${this.formatCompactNumber(item.currentCost)} Crystals`;
-        }
-        if (amount === 'MAX') {
-            return `Buy MAX`;
-        }
-        let cumulativeCost = 0;
-        for (let i = 0; i < amount; i++) {
-            cumulativeCost += Math.floor(item.baseCost * Math.pow(costIncreaseRatio, item.owned + i));
-        }
-        return `Cost: ${this.formatCompactNumber(cumulativeCost)} Crystals`;
-    });
-
     return View({
-      style: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 5, marginBottom: 10 },
+      style: { 
+          flexDirection: 'row', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: 10, 
+          backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+          borderRadius: 5, 
+          marginBottom: 10 
+        },
       children: [
         View({ style: { flex: 1 }, children: [
-            Text({ text: item.name, style: { color: 'white', fontSize: 20 } }),
-            Text({ text: costText, style: { color: '#CCCCCC', fontSize: 14 } }),
-            Text({ text: `+${this.formatCompactNumber(item.productionRate)} CPS`, style: { color: '#CCCCCC', fontSize: 14 } }),
+            View({style: {flexDirection: 'row', alignItems: 'center', marginBottom: 5}, children: [
+                Text({ text: `${item.name}: `, style: { color: 'white', fontSize: 22, fontWeight: 'bold' } }),
+                Text({ text: `${item.owned}`, style: { color: '#f1c40f', fontSize: 22, fontWeight: 'bold' } }),
+            ]}),
+            
+            View({ style: { flexDirection: 'row', alignItems: 'center' }, children: [
+                Text({ text: `${this.formatCompactNumber(item.productionRate)} CPS`, style: { color: '#CCCCCC', fontSize: 18 } }),
+                Text({ 
+                    text: this.rebirthStateBinding.derive((rs: RebirthState) => {
+                        const baseProduction = item.productionRate * item.owned;
+                        const totalProduction = baseProduction * (1 + (rs.darkMatter * 0.01));
+                        const bonus = totalProduction - baseProduction;
+                        return (bonus > 0) ? ` +${this.formatCompactNumber(bonus)}` : '';
+                    }), 
+                    style: { 
+                        color: '#ab47bc', 
+                        fontSize: 20, 
+                        marginLeft: 8,
+                        fontWeight: 'bold',
+                        textShadowColor: 'white',
+                        textShadowRadius: 8,
+                    } 
+                }),
+            ]}),
             UINode.if( item.nextMilestone !== undefined, Text({ text: `Next bonus at ${item.nextMilestone?.owned}: x${item.nextMilestone?.multiplier} Production!`, style: { color: '#FFD700', fontSize: 14, marginTop: 4 } }))
         ]}),
-        View({ style: { alignItems: 'center' }, children: [
-            Text({ text: `Owned: ${item.owned}`, style: { color: 'white', fontSize: 20 } }),
-            Pressable({
-              disabled: this.crystalCountBinding.derive(crystals => crystals < item.currentCost),
+        
+        View({ style: { alignItems: 'flex-end', justifyContent: 'center', minHeight: 70 }, children: [
+             Pressable({
+              disabled: this.crystalCountBinding.derive((crystals: number) => crystals < item.currentCost),
               onClick: (player) => this.sendNetworkBroadcastEvent(OnBuyGenerator, { 
                   player, 
                   generatorId: item.id, 
-                  // [FIXED #1] Use the class variable to get the current purchase amount.
-                  amount: this.purchaseAmount 
               }),
-              children: [Text({ text: 'Buy', style: { color: 'white', fontSize: 18 } })],
-              style: { backgroundColor: this.crystalCountBinding.derive(crystals => crystals >= item.currentCost ? '#34A853' : '#555555'), padding: 10, borderRadius: 5 },
+              children: [Text({ text: 'Buy', style: { color: 'white', fontSize: 20 } })],
+              style: { 
+                  backgroundColor: this.crystalCountBinding.derive((crystals: number) => crystals >= item.currentCost ? '#34A853' : '#555555'), 
+                  paddingVertical: 12,
+                  paddingHorizontal: 25,
+                  borderRadius: 8,
+                  marginBottom: 5,
+                },
             }),
+            Text({ text: `Cost: ${this.formatCompactNumber(item.currentCost)}`, style: { color: '#CCCCCC', fontSize: 16 } }),
         ]})
       ],
     })
@@ -389,10 +401,11 @@ export class GameUI extends UIComponent<typeof GameUI> {
 
   private renderCurrentQuest(): UINode {
     return View({
-      style: { padding: 10, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 5, minHeight: 60, justifyContent: 'center' },
+      style: { padding: 15, backgroundColor: 'rgba(0,0,0,0.3)', borderTopWidth: 2, borderColor: '#555', minHeight: 80, justifyContent: 'center' },
       children: [
+        Text({text: "Current Directive:", style: {color: '#aaa', fontSize: 14, marginBottom: 5}}),
         Text({
-          text: this.currentQuestBinding.derive(quest => quest ? quest.description : "All Quests Complete!"),
+          text: this.currentQuestBinding.derive(quest => quest ? quest.description : "All Directives Complete!"),
           style: { color: this.currentQuestBinding.derive(quest => quest ? 'white' : '#AAAAAA'), fontSize: 18 }
         })
       ]
