@@ -1,0 +1,2608 @@
+Create a custom UI panel
+This topic shows you how to create a custom UI panel. To create one, you need a Custom UI gizmo and a UIComponent script.
+Step 1: Create a Custom UI gizmo
+On the menu bar, find the Custom UI gizmo in the Build dropdown menu > Gizmos and drag it into the Scene pane. Like other entities, you can control the position, scale, rotation, and visibility of the Custom UI gizmos, both from the Properties panel and from scripts.
+The Gizmos panel is where you’d find the Custom UI gizmo.
+Select the Custom UI gizmo
+On the far right of the desktop editor, you’d find the Custom UI’s Properties panel.
+A custom UI panel is represented by a Custom UI gizmo, which controls where and how the panel is placed in the world. You can place multiple Custom UI gizmos in the world.
+In the past, creators often placed duplicate Custom UI gizmos in the world and controlled the visibility for each to create custom UI panels that displayed different content for each player. In most cases, you do not need to duplicate Custom UI gizmos. The Custom UI feature allows you to display different content to different players within the same Custom UI gizmo. See Player-specific custom UI for details.
+Step 2: Create a UI script
+The Custom UI gizmo does nothing unless you attach a script to it. The script controls the content of the panel. Next, create a TypeScript script using the desktop editor. To use the Custom UI functionalities, include horizon/ui module for TypeScript API v2.0.0 from the Scripts dropdown menu > Settings (the gear button on the top right of Scripts menu). The examples here are for TypeScript API v2.0.0.
+Create a UI script
+Step 3: Create a Hello World template
+Write the following code in your script. Notice that the component extends the UIComponent class, instead of a regular Component. UIComponent Class describes what each line means in more detail, but this template is a good starting point for now.
+import 'horizon/core';
+import {UIComponent, View, Text} from 'horizon/ui';
+
+class HelloWorld extends UIComponent {
+  initializeUI() {
+    return View({
+      children: Text({text: 'Hello World', style: {color: 'black'}}),
+      style: {backgroundColor: 'white'},
+    });
+  }
+}
+
+UIComponent.register(HelloWorld);
+Step 4: Attach the script to the gizmo
+Like all script components, the same UIComponent can be attached to more than one Custom UI gizmo. Those Custom UI gizmos will then display the same content.
+To achieve player-specific custom UIs and heads-up display (HUDs), you do not need to duplicate Custom UI gizmos or scripts in most cases. The framework provides tools for you to build custom UI panels that display different content for different players.
+You can find the registered HelloWorld component in the Script section of the Properties panel.
+Attach the HelloWorld script to the Custom UI entity close up
+After you attach the HelloWorld script to the Custom UI entity, the Custom UI gizmo is replaced by the “Hello World” panel when you’re in Preview Mode. You can resize the panel and place it wherever you like.
+Note: You can choose the display mode based on your preference in the Properties panel > Visual & Interaction > Display mode. The following image shows the “Hello World” panel in the default display mode.
+Hello World custom UI panel
+
+
+Custom UI panel configurations
+This topic describes how you can customize behaviors of the custom UI panel in Properties by configuring settings for Raycast, Mipmap, Focus prompt and related properties.
+Find these settings by first selecting the Custom UI gizmo entity in Hierarchy. The corresponding configuration settings are then shown in Properties > Visual & Interaction and Web and Mobile. You can use both the desktop editor and the VR edit mode to configure the settings.
+The following image shows the custom UI panel configuration settings in the desktop editor.
+The custom UI panel configuration in the desktop editor
+The following image shows the custom UI panel configuration settings in the VR edit mode.
+The custom UI panel configuration in the VR edit mode
+There are no TypeScript APIs for these configurations. They can only be set statically in Properties and cannot be changed at runtime.
+Visual & Interaction settings
+Raycast
+In VR, players interact with the UI panels through raycast from their controllers. By default, raycast is automatically enabled when a player is within a certain distance of the UI panel. You can disable raycast and customize the raycast distance.
+When raycast is disabled, the UI panel no longer receives the raycast input events. As a result, the player can no longer interact with the panel. For example, no Pressable components will work properly.
+Raycast distance
+Raycast distance controls the distance within which a player can interact with the UI panel. By default, the value is 3. We advise not to set the raycast distance greater than 10. While there’s no strict upper limit for this setting, having a larger raycast distance across multiple UI panels could negatively impact the performance.
+These raycast settings only affect the player experience in VR and are unused for web and mobile experiences.
+Mipmap
+By default, certain UI panels might have aliasing problems and appear pixelated when viewed from a far distance. This can be particularly undesirable when the UI content contains small text. Enabling mipmap can mitigate the issue by automatically caching some downsampled UI texture.
+Mipmap bias
+When mipmap is enabled, the mipmap value setting becomes visible. The range for the mipmap bias is set between -1 and 1, and the default is 0. Enabling mipmap will slightly affect the performance. If mipmap is enabled for a large number of visible UI panels, it could negatively impact the Graphics Processing Unit (GPU) performance and reduce frames per second (FPS). Use this feature sparingly only when needed.
+Web and Mobile settings
+Focus prompt
+Unlike in VR, players do not interact with UI panels through raycast on web and mobile platforms. Instead, players see a prompt when they are within a certain distance from the UI panel, prompting them to press “E” key. If they do, the camera will zoom in and focus onto the UI panel, and players can interact with the UI through clicking or tapping.
+The player sees the UI panel Hello World
+When the focus prompt is disabled, players cannot zoom in and focus onto the UI panel and they cannot interact with the panel.
+Focus prompt distance
+Focus prompt distance controls the distance within which the focus prompt is shown to a player and the player can zoom in. By default the value is 2.5, but can be customized with a number that ranges between 0 and 10. The range restriction is due to performance considerations.
+These focus prompt settings only affect the player experience on web and mobile platforms and are unused for VR experiences.
+Web and mobile unsupported use cases
+Moving UI panels that can receive focus from players
+In some cases, if a UI panel is in motion when a player interacts with it, the UI panel may appear cropped or clipped as the UI panel continues to move after receiving camera focus.
+To avoid this, don’t move or rotate UI panels that can receive focus from players.
+
+
+UIComponent class
+This topic describes the UIComponent class that is used to create custom UIs in your world. The script attached to a Custom UI gizmo extends the new UIComponent class instead of the regular Component class. UIComponent is similar to Component in many ways, for example, both can access the this.world object and listen to events. But the UIComponent class includes specialized properties and methods.
+Properties: panelHeight and panelWidth
+The two properties of the UIComponent class are panelHeight and panelWidth. The default panel size is 500 x 500 pixels. You can change the size by specifying the panelHeight and panelWidth properties.
+class HelloWorld extends UIComponent {
+  panelHeight = 200; // the default value is 500
+  panelWidth = 460; // the default value is 500
+
+  initializeUI() {
+    return View({
+      children: [Text({text: 'Hello World'})],
+      style: {backgroundColor: 'white'},
+    });
+  }
+}
+
+UIComponent.register(HelloWorld);
+You cannot change the panel size after the UI panel is initialized. Assigning new values to this.panelHeight or this.panelWidth has no effect at runtime. Therefore, the example above is the recommended way of defining panel sizes.
+Note: The panel size of the UI panel is different from the scale of the UI gizmo. The panel size defines how many pixels you can draw inside the panel. Scale defines how big those pixels are. If the UI panel is a screen, scale controls its size, and panel size its resolution.
+The following image shows two different sets of Scale attributes in Properties.
+An example that shows that scale controls the size of the UI panel in properties
+The following image shows the left UI gizmo is smaller than the right UI gizmo with Scale attribute of (1, 1, 1) vs. (2, 2, 2).
+An example that shows that scale controls the size of the UI panel in the scene
+Method: initializeUI()
+In the UIComponent class, initializeUI() is an important method that is used to define the content of the UI. When a UI gizmo is initialized, it calls initializeUI() to get the UI that the entity needs to render. Conceptually, this is what happens behind the scene:
+// Conceptual; not real implementation
+start() {
+  this.entity.as(UIGizmo).setPanelSize({
+    height: this.panelHeight,
+    width: this.panelWidth,
+  });
+  this.entity.as(UIGizmo).setUI(this.initializeUI());
+
+  // The rest of the start function are executed thereafter
+}
+While the initializeUI() method might remind some developers of the render() function in the React component class, they are fundamentally different in that initializeUI() is only called once in the lifecycle of the UI panel. When any props or variables are changed, the UI panel does not automatically re-render to reflect the changes in the dependent data.
+There are ways to update the UI panel after it is initialized with Binding. See Updating UI with Binding for more details. For now, remember that initializeUI() is only called once when the UI gizmo is initialized, before the start() method of the component.
+Because both initializeUI() and start() are executed when the world or the UI gizmo starts, it’s not required for a UIComponent to provide an implementation for start(). When the world starts, if you’d like to connect to event handlers, you can place the code in either initializeUI() or start(). For example, the following two implementations have the same behavior:
+Implementation 1
+initializeUI() {
+  this.connectEntityEvent(
+    this.entity,
+    myTsEvent,
+    data => {...},
+  );
+
+  return View({...});
+}
+Implementation 2
+initializeUI() {
+  return View({...});
+}
+
+start() {
+  this.connectEntityEvent(
+    this.entity,
+    myTsEvent,
+    data => {...},
+  );
+}
+However, keep in mind that initializeUI() is executed before start(). If the UI depends on some local variables, initialize them in initializeUI(), not start().
+Components and props
+As mentioned before, the initializeUI() method must return the UI that you want to render. You can build the UI with the components that are provided, e.g. View, Text, Image, etc.
+Essentially, these components are functions that take in an object of props and output an opaque UINode object, for example:
+function View(props: ViewProps): UINode;
+You do not need to know the internal implementation of UINode. You only need to know that the initializeUI() method must return a UINode.
+Each component also takes an object of props, and the props type is different for each component type. For example, the following code defines a Text component with a text and a style prop:
+const text = Text({
+  text: 'Hello World',
+  style: {fontSize: 24},
+});
+You can find the detailed documentation on the props and styles supported by each component in API Reference for custom UI. Also see related details in the UI API(/reference/2.0.0/). For now, this topic briefly introduces the important common props, style and children.
+Prop: style
+Most components include a style prop, which is the main tool to adjust the appearances of the components. It supports most of the stylesheets from CSS and React Native.
+const view = View({
+  style: {
+    backgroundColor: '#EDE2D5',
+    justifyContent: 'center',
+    padding: 24,
+    width: '100%',
+  },
+});
+Different components support different sets of styles. Again, you can find detailed documentation on the supported styles in the API Reference for custom UI.
+Prop: children
+Similar to the UI you would find in other frameworks like HTML and React, the custom UI is also a tree structure, and a component may have children components. This is defined through the children prop, which can be either one or an array of UINodes.
+const view = View({
+  children: View({
+    // children can be one UINode
+    children: [
+      // or an array of UINodes
+      Text({text: 'Hello World'}),
+      Text({text: 'This is a subtitle'}),
+    ],
+  }),
+});
+Not all components can have children. For example, you cannot assign children components to a Text component. You can refer to API Reference for custom UI to see which component props explicitly include a children prop.
+It is acceptable and quite common to store a part of the component into its own variable, so that a large complex UI can be broken down into smaller parts, improving code readability. For example, the above component can also be written as the following:
+const text1 = Text({text: 'Hello World'});
+const text2 = Text({text: 'This is a subtitle'});
+const content = View({children: [text1, text2]});
+const view = View({children: content});
+
+
+Building Interactive Custom UI
+So far we have seen how to create a static, non-interactive UI panel. But in most cases, we want to build dynamic UI panels that can interact with the rest of the world. These interactions are categorized into two types:
+Calling TypeScript from UI: Some UI components (like Pressables) should be able to receive player inputs and execute their effects implemented in the TypeScript;
+Controlling UI from TypeScript: TypeScript should be able to control and update what is being displayed in the UI at runtime, after the UI is initialized.
+This section and the next explore these capabilities by working through a concrete example. Consider a game where the players are given a chance to change the color for a ball. We want to have some prompt text and a confirmation button. After any player clicks the buttons, we update the color of the ball, remove the button, and change the prompt text content and color. 
+To start, let’s build the static version of the UI. For simplicity, in later sections we will hide the style props.
+class BallDialog extends UIComponent {
+  panelHeight = 200;
+  panelWidth = 460;
+
+  initializeUI() {
+    return View({
+      children: [
+        Text({
+          text: 'Want to change the color of the ball?',
+          style: {
+            color: 'black',
+            fontSize: 24,
+          },
+        }),
+        View({
+          children: Text({
+            text: 'Sure!',
+            style: {
+              color: 'white',
+            },
+          }),
+          style: {
+            alignItems: 'center',
+            backgroundColor: '#19AD0E',
+            borderRadius: 8,
+            height: 36,
+            justifyContent: 'center',
+            marginTop: 12,
+            width: 240,
+          },
+        }),
+      ],
+      style: {
+        alignItems: 'center',
+        backgroundColor: '#EDE2D5',
+        borderRadius: 24,
+        flexDirection: 'column',
+        padding: 24,
+        width: '100%',
+      },
+    });
+  }
+}
+Invoking Callbacks from UI
+Some components, like Pressable, can take function props as event handlers. We usually call them callbacks . For example, the props of Pressable include onClick, onEnter, onExit, etc. and each callback will be executed when the corresponding event happens in the UI.
+Let’s add the effects of changing the color of the ball to our UI above (some style props are hidden for simplicity).
+class BallDialog extends UIComponent<typeof BallDialog> {
+  static propsDefinition = {
+    ball: { type: PropTypes.Entity },
+  };
+
+  initializeUI() {
+    return View({
+      children: [
+        Text({
+          text: 'Want to change the color of the ball?',
+          style: { ... },
+        }),
+        Pressable({
+          children: Text({ text: 'Sure!', style: { ... } }),
+          onClick: () => {
+            this.props.ball.color.set(new Color(0.9, 0.2, 0.2));
+          },
+          style: { ... },
+        }),
+      ],
+      style: { ... },
+    });
+  }
+}
+Let’s recap what happened:
+We passed in the entity we want to manipulate through the props
+We changed the button from View to Pressable so that we can assign callbacks to the component to act on the player input events
+We write the onClick callback as a function, and put the desired effects inside, which is setting a new color to the entity that we passed into the props
+The Acting Player
+We can also know which player is the “acting player”, that is, the player who triggered the callback. This will be handy when creating buttons that have different effects for different players.
+All the callbacks are of type (player: Player) => void, and the parameter player is the Player object of the acting player. We can then implement the callback effects that takes into the player information:
+Pressable({
+  onClick: (player: Player) => {
+    console.log(`Player with id ${player.index.get()} clicked`);
+    // Do thigs differently based on the player
+    this.sendCodeBlockEvent(player, myPlayerEvent, {...});
+  },
+})
+We will explore more in the Player-Specific UI section with an even more complicated example.
+Working with Class Methods
+A common pattern is to make the callback a class method. When we do this, we need to be extra careful about the meaning of this. In TypeScript, class methods are not bound by default. If we do not bind a class method and pass it into a prop as a callback, when it is actually called, this will be undefined. This is not a behavior specific to our UI framework; it is a part of how functions and classes work in JavaScript.
+There are three solutions to this issue. The first is to explicitly bind this when assigning callbacks:
+// in BallDialog class
+handleClick() {
+  this.props.ball.color.set(new Color(0.9, 0.2, 0.2));
+}
+
+// then in Pressable
+onClick: this.handleClick.bind(this),
+The second is to change class methods into class fields:
+// in BallDialog class
+handleClick = () => {
+  this.props.ball.color.set(new Color(0.9, 0.2, 0.2));
+};
+
+// then in Pressable
+onClick: this.handleClick,
+The third is to write callbacks as inline arrow functions:
+// in BallDialog class
+handleClick() {
+  this.props.ball.color.set(new Color(0.9, 0.2, 0.2));
+}
+
+// then in Pressable
+onClick: () => this.handleClick(),
+Passing Parameters into Callback
+Sometimes the callback we want to call needs to take parameters, for example, we can imagine a class method this.setBallColor(color: Color) that encapsulates the change-color effect and takes a parameter as the new color. When we need to pass parameters into a callback, we can either bind the function or create a new inline arrow function:
+// in BallDialog class
+setBallColor(color: Color) {
+  this.props.ball.color.set(color);
+}
+
+// then in Pressable
+onClick: this.setBallColor.bind(this, new Color(0.9, 0.2, 0.2)),
+// or equivalently
+onClick: () => this.setBallColor(new Color(0.9, 0.2, 0.2)),
+
+
+Building Dynamic Custom UI
+So far our UI panel is still static. We want to make it dynamic, so that we can update the text content and color after the button is clicked.
+Updating UI with Binding
+Conceptually, we want some “container for a state” to host a value that can be changed later. We provide a Binding class that serves as such a container. We can instantiate a Binding with an initial value, and can call its set() method to change the value later, which is usually done in a callback or an event listener.
+To see that in action, our example can be implemented as:
+initializeUI() {
+  const textPrompt = new Binding<string>(
+    'Want to change the color of the ball?',
+  );
+  const textColor = new Binding<string>('black');
+
+  return View({
+    children: [
+      Text({
+        text: textPrompt,
+        style: { color: textColor, ... },
+      }),
+      Pressable({
+        children: Text({ text: 'Sure!', style: { ... } }),
+        onClick: () => {
+          this.props.ball.color.set(new Color(0.9, 0.2, 0.2));
+          textPrompt.set('Enjoy your new color!');
+          textColor.set('red');
+        },
+        style: { ... },
+      }),
+    ],
+  });
+}
+Let’s recap what happened:
+We created two instances of Binding of string type, one for the text content, and one for the color. They are “containers” for values that we want to change later. We pass in an initial value when we create the Bindings, which are the original text content “Want to change the color of the ball?” and the original color “black”.
+During the initialization of the UI, instead of passing explicit string values into the text prop and color style of the Text component, we pass in the Binding instances that we created in the last step.
+When we want to change the text content and color, we simply call the set() method of the Bindings with the new value “Enjoy your new color!” and “red”, and the UI will be updated accordingly.
+Every time we call the set() method on any Binding instance, it will trigger a potential re-render of the UI panel. Setting a new value to a Binding is the only way to update a UI panel after it is initialized.
+Not every prop or style can receive a Binding as its value. You can refer to the API Reference section to see which props and styles are marked as Bindable. Notice that our binding is not a class field, but created within the scope of initializeUI(). This is possible because the only place we update the Binding is also inside initializeUI(). This pattern allows us to avoid creating many class fields, keeping the code clean and readable.
+Conditional Rendering
+A common practice is to conditionally render a part of the UI, depending on some states of the game. In our example above, we want to hide the button after it is clicked. We provide a method UINode.if(), which can be used to pick which component to show depending on a boolean condition.
+initializeUI() {
+  const textPrompt = new Binding<string>(
+    'Want to change the color of the ball?',
+  );
+  const textColor = new Binding<string>('black');
+  const showButton = new Binding<boolean>(true);
+
+  return View({
+    children: [
+      Text({
+        text: textPrompt,
+        style: { color: textColor, ... },
+      }),
+      UINode.if(
+        showButton,
+        Pressable({
+          children: Text({ text: 'Sure!', style: { ... } }),
+          onClick: () => {
+            this.props.ball.color.set(new Color(0.9, 0.2, 0.2));
+            textPrompt.set('Enjoy your new color!');
+            textColor.set('red');
+            showButton.set(false);
+          },
+          style: { ... },
+        }),
+      ),
+    ],
+  });
+}
+Let’s recap what happened:
+We created a boolean Binding, which is used to indicate if the button should be rendered or not. Its default value is true, since we want to render the button in the beginning.
+Instead of passing the button as a child component, we pass a UINode.if() expression. It takes the boolean Binding we created in the last step in the first argument as the “condition” to check. If it is true, it will render the component in the second argument; if it is false, nothing will be rendered.
+Inside the onClick callback of the component, we call the set() method of the boolean Binding, just like we did to the text string Binding, changing its value to false.
+The UINode.if() expression also works well if we already defined and stored our component in another variable, because we can directly pass the variable into the UINode.if() expression without any props change.
+initializeUI() {
+  const ...
+  const showButton = new Binding<boolean>(true);
+
+  const button = Pressable({
+    children: Text({ text: 'Sure!', style: { ... } }),
+    onClick: () => { ... },
+    style: { ... },
+  });
+
+  return View({
+    children: [
+      Text({ ... }),
+      UINode.if(showButton, button),
+    ],
+  });
+}
+The UINode.if() expression also accepts a third parameter, which will be rendered when the condition is false. Instead of maintaining two boolean Bindings and having two UINode.if() expressions, we can simply have:
+UINode.if(condition, trueComponent, falseComponent);
+It is not recommended to wrap the root component by the UINode.if() expression. Compared to rendering an empty UI panel, hiding the entity altogether is much more performant. If we want to toggle the visibility of the entire UI panel, it is recommended to change the visibility of the UI Gizmo entity itself.
+this.entity.visible.set(false);
+this.entity.setVisibilityForPlayers([], PlayerVisibilityMode.VisibleTo);
+Deriving Binding Values
+In our example, you may have noticed that our three Bindings are always changed together. And if you think about the UI flow, there are really only two states: before and after the button click. Wouldn’t it be nice if we can use only one boolean to indicate the state of the UI?
+We provide a derive() method that allows us to derive a new value from the existing Binding. With this, we can rewrite the UI into:
+initializeUI() {
+  const hasClicked = new Binding<boolean>(false);
+
+  return View({
+    children: [
+      Text({
+        text: hasClicked.derive(v => v
+          ? 'Enjoy your new color!'
+          : 'Want to change the color of the ball?',
+        ),
+        style: {
+          color: hasClicked.derive(v => v ? 'red' : 'black'),
+          ...
+        },
+      }),
+      UINode.if(
+        hasClicked.derive(v => !v),
+        Pressable({
+          children: Text({ text: 'Sure!', style: { ... } }),
+          onClick: () => {
+            this.props.ball.color.set(new Color(0.9, 0.2, 0.2));
+            hasClicked.set(true);
+          },
+          style: { ... },
+        }),
+      ),
+    ],
+  });
+Let’s recap what happened:
+Instead of creating three Bindings, one for each prop/style/condition, we only create one Binding of boolean type. We will use this Binding to tell what value should be used for all props/styles/conditions.
+We call the derive() method on the Binding to derive its value into a new value before sending it into the props/styles/conditions. The function that we passed into the derive() method tells it how the new value should be derived. It takes the current Binding value and returns a new value.
+Instead of setting new values for three Bindings in the callback, we only need to do so for one. When a new value is set for the boolean Binding, all of its derived values are also updated together.
+There is also a static derive() method that allows us to derive a new value from more than one Binding. For example, maybe we have two boolean Bindings that we want to combine into one condition:
+Binding.derive([conditionA, conditionB], (a, b) => a && b);
+Every time we call the set() method on any Binding instance, it will update its value, as well as all the values that are derived from it, before triggering a re-render for the UI.
+To be a little more precise, the returned value of the derive() method is a DerivedBinding instance. It functions a lot like a Binding, and can be passed to the supported props and styles of a component in place of an explicit value. However, it does not have a set() method, and its value is purely derived from the Bindings that it depends on.
+Because Bindings can easily be derived into other types and values, you shouldn’t need to create duplicate Bindings that will always be updated together. In this sense, Bindings now work a lot like states in React. You should try to identify the minimal representation of the UI states, and only create Bindings for them, and derive everything else you need on-demand.
+Functional Updates
+If the new value of a Binding is computed using the previous value, we can pass a function to the set() method. This is called a functional update. The function will receive the previous value, and return an updated value.
+For example, consider a toggle switch button that toggles a boolean value:
+initializeUI() {
+  const isSelected = new Binding<boolean>(false);
+  return Pressable({
+    onClick: () => {
+      isSelected.set(v => !v);
+    },
+  });
+}
+It is possible to put other stuff inside the function, like emitting events, but keep in mind that they should be lightweight so that they do not block the Binding update. For example, we might want to also emit events when a binding is updated. Normally we can emit the event right before or after the binding update, but if the event also need to depend on the Binding value:
+someBinding.set(prev => {
+  const next = !prev;
+  this.sendEntityEvent(target, myUpdateEvent, { prev, next } );
+  return next;
+Connecting to Events
+In our change-ball-color example, the bindings are updated inside the callback of a Pressable component. We can also do so in event handlers we connect.
+For example, let’s say we also want to hide the button until any player successfully finds and grabs the ball. Then we need a boolean Binding to track whether the ball has been found, and need to connect a handler to the OnGrabStart event.
+initializeUI() {
+  const hasFound = new Binding<boolean>(false);
+  const hasClicked = new Binding<boolean>(false);
+
+  this.connectCodeBlockEvent(
+    this.props.ball,
+    CodeBlockEvents.OnGrabStart,
+    (isRightHand: boolean, player: Player) => {
+      hasFound.set(true);
+    },
+  );
+
+  return View({
+    children: [
+      Text({
+        text: Binding.derive([hasFound, hasClicked], (found, clicked) =>
+          found
+            ? clicked
+              ? 'Enjoy your new color!'
+              : 'Want to change the color of the ball?'
+            : 'Find the ball',
+        ),
+        style: { ... },
+      }),
+      UINode.if(
+        Binding.derive(
+          [hasFound, hasClicked],
+          (found, clicked) => found && !clicked,
+        ),
+        Pressable({ ... }),
+      ),
+    ],
+  });
+}
+As before, we do not need class fields and are able to put everything into the scope of initializeUI(), because we can connect events in this method as well.
+No Get Method for Bindings
+There is no public get() method for Bindings on purpose. This is to prevent creators from misusing the Bindings. Consider our change-ball-color example. If there is a get method, one might be tempted to pass in different values into text and color based on the value of hasClicked:
+// WRONG; only to illustrate why using get method is error-prone
+initializeUI() {
+  const hasClicked = new Binding<boolean>(false);
+
+  return View({
+    children: [
+      Text({
+        // WRONG; this is an explicit value, not a Binding
+        text: hasClicked.get()
+          ? 'Enjoy your new color!'
+          : 'Want to change the color of the ball?',
+        style: {
+          // WRONG; this is an explicit value, not a Binding
+          color: hasClicked.get() ? 'red' : 'black',
+          ...
+        },
+      }),
+      ...
+    ],
+  });
+}
+This implementation is wrong, because the values of text and color are not Bindings but explicit values. When the Binding hasClicked is updated, the UI will not re-render. We choose not to expose a public get() method to prevent this scenario.
+If we need to get the value of a Binding because we need to use it in multiple styles, like in our example above, we should use derived Bindings. If we need to get the value of a Binding because we need to set a new value based on the old value, we should use functional updates.
+In some rare cases, we want to keep track of the value of the Binding for some other uses. To do this, we will have to create a separate variable to track the value:
+initializeUI() {
+  let someBindingValue = 0;
+  const someBinding = new Binding<number>(0);
+
+  return Pressable({
+    onClick: () => {
+      someBindingValue = newValue;
+      someBinding.set(newValue);
+    },
+  });
+}
+
+
+User-Defined Components for Custom UI
+Often, you will need to render multiple components with similar styles. For example, let’s say you want to modify your change-ball-color example so that the players can choose between two colors, “Red” and “Green”:
+
+Those two buttons largely have the same styles, i.e. height, padding, border radius, etc., with only small differences like background color. Their children texts also have the same style. It will be verbose to duplicate these styles for each button.
+One obvious solution is to put common styles into constant variables:
+initializeUI() {
+  const commonButtonStyle: ViewStyle = {
+    borderRadius: 8,
+    height: 36,
+    width: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+  const commonButtonLabelStyle: TextStyle = {
+    color: 'white',
+  };
+
+  return View({
+    ...
+          Pressable({
+            children: Text({
+              text: 'Red',
+              style: commonButtonLabelStyle,
+            }),
+            onClick: ...,
+            style: {
+              ...commonButtonStyle,
+              backgroundColor: '#CF1313',
+              marginRight: 24,
+            },
+          }),
+          Pressable({
+            children: Text({
+              text: 'Green',
+              style: commonButtonLabelStyle,
+            }),
+            onClick: ...,
+            style: {
+              ...commonButtonStyle,
+              backgroundColor: '#19AD0E',
+            },
+          }),
+    ...
+  });
+}
+But there are still duplicated elements, like the component structure itself. It would be nice if we can create our own component and just use that in the UI tree!
+Writing a User-Defined Component
+Remember that all components are just functions that return a UINode. As long as your function also returns a UINode, you can put a bunch of shared logic inside your own function, essentially creating a user-defined component:
+// Define the props that our user-defined component receives
+type MyButtonProps = {
+  label: string,
+  onClick: Callback,
+  style: ViewStyle,
+};
+
+function MyButton(props: MyButtonProps): UINode {
+  return Pressable({
+    children: Text({
+      text: props.label,
+      style: { color: 'white' },
+    }),
+    onClick: props.onClick,
+    style: {
+      borderRadius: 8,
+      height: 36,
+      width: 120,
+      alignItems: 'center',
+      justifyContent: 'center',
+      // additional styles are spreaded the last
+      // to override default styles
+      ...props.style,
+    },
+  });
+}
+
+initializeUI() {
+  return View({
+    ...
+          MyButton({
+            label: 'Red',
+            onClick: ...,
+            style: { backgroundColor: '#CF1313', marginRight: 24 },
+          }),
+          MyButton({
+            label: 'Green',
+            onClick: ...,
+            style: { backgroundColor: '#19AD0E' },
+          }),
+    ...
+  });
+}
+Let’s recap what happened:
+We created a user-defined component called MyButton, which is just a function that takes in an object of props, and returns a UINode. While technically possible to take any form of parameters, it is recommended for user-defined components to take one parameter of object type called props, to be consistent with other components.
+In the props, we define the list of inputs that the component would need. Here we need three: the label of the button, the onClick callback, and the additional style that is added to the default button style. We properly type them using the Callback and ViewProps types which can be imported from the “horizon/ui” module.
+Inside the MyButton component, we make sure we return the rendered UINode object, which is constructed from other components like Pressable and Text. Notice that we merge the props.style into the default style of the button. This allows us to only pass in the necessary special style when using the component, greatly simplifying the code.
+Inside the main UI panel, we simply use the MyButton component just like other components and pass in the necessary props when. Notice that we can use multiple MyButton components. This way, we have created an easily reusable component.
+Private Bindings inside a User-Defined Component
+User-defined components are an excellent way to encapsulate UI components. They are able to hide large UI structures and lengthy styles away.
+But there is more! We can create private Bindings inside our user-defined components. For example, if we want to add a hover state for the button:
+function MyButton(props: MyButtonProps): UINode {
+  const DEFAULT_COLOR = '#19AD0E';
+  const HOVERED_COLOR = '#87D481';
+  const backgroundColor = new Binding<string>(DEFAULT_COLOR);
+
+  return Pressable({
+    children: Text({ ... }),
+    onClick: props.onClick,
+    onEnter: () => backgroundColor.set(HOVERED_COLOR),
+    onExit: () => backgroundColor.set(DEFAULT_COLOR),
+    style: { backgroundColor, ... },
+  });
+}
+Notice that the Binding is completely inside the scope of MyButton. When other components use MyButton, they never need to know any details about this Binding, yet the hover effect is handled automatically inside MyButton. If you are familiar with React, an analogy you can draw is that the local Binding acts like a private “state” of a React component.
+This only works when the Binding is only updated by the callbacks of the UI components we are returning. If we need to connect to Horizon events, we cannot do so inside the scope of user-defined components, because we can only connect Horizon events in a Component or UIComponent.
+
+
+Player-Specific Custom UI
+When building a UI panel, a common scenario is to display different content for each player. An example is the button hover color, which should only be shown to the player interacting with the button, but not all players. (Therefore, you can see that the hover state implementation in the previous section is in fact incorrect, because the button background color will change when any player hovers onto the button.) Another example would be players’ HUD (heads-up display) where we obviously want to show different numbers and stats for each player.
+One straightforward way to achieve this is to duplicate the entity and set the visibility of each entity so that it is only visible to one player. We actually recommend using the Local Mode when adopting this approach. Please see a more detailed discussion and examples in the Local Mode section. But there are cases where we don’t want to have multiple UI gizmos, and want to keep one single panel that is publicly visible. Custom UI feature allows us to display different content to each player on the same UI Gizmo . This is achieved by only updating the value of a Binding to certain players, thus creating a player-specific value for them.
+Setting New Values for Only Certain Players
+The set() method of the Binding can take an optional second parameter of an array of players.
+When the set() method is called without an array of players, the new value (we call it the global value ) is updated to everyone; when it is called with an array of players, only those players will receive the new value of the Binding (we call it the player value).
+// Everyone gets the new value, and everyone's UI is re-rendered
+someBinding.set(newValue);
+
+// Only player1 and player2 get the new value and a UI re-render;
+// everyone else stays unaffected
+someBinding.set(newValue, [player1, player2]);
+Therefore, the correct implementation for the button with hover state needs to take the acting player into account, and only manipulate the player specific value:
+function MyButton(props: MyButtonProps): UINode {
+  ...
+  return Pressable({
+    children: Text({ text: props.label, style: { ... } }),
+    onClick: props.onClick,
+    onEnter: player => backgroundColor.set(HOVERED_COLOR, [player]),
+    onExit: player => backgroundColor.set(DEFAULT_COLOR, [player]),
+    style: { backgroundColor, ... },
+  }),
+}
+Global Value vs Player Values
+Conceptually, it would be helpful to explicitly make a distinction between the “global value” and the “player values.” A player would see the global value by default; however, if there is a player value set for a player, that player will see the player value. Another way to think about global value is that, when a new player joins the world, that player will always receive the global values as the initial values.
+The behavior of the set() method of the Binding can be more accurately described as:
+When the set() method is called with an array of players, we are effectively setting a new player value for those players in the array. In this case, the global value is left unchanged, so other players that are not in the array will be unaffected.
+When the set() method is called without an array of players, we are updating the global value, and clearing all player values. As a result, all players will receive the new value, regardless of whether they have any player values in the past.
+As you can see, player values can be seen as “deviations” from the global value. Therefore, we also provide a reset() method, which will remove the player values, effectively setting the Binding back to the global value. Like the set() method, the reset() method also takes an optional array of players, which indicates who we should reset for. If provided, only those players in the array will have their player values reset and receive the global value; if not provided, all player values will be cleared. With the introduction of the reset() method, we can have an even simpler implementation for the button hover state. We may treat the default color as the global value, and the hovered color as the player value, then instead of setting it back to the default color, we simply need to reset the Binding:
+function MyButton(props: MyButtonProps): UINode {
+  const backgroundColor = new Binding<string>('#19AD0E');
+
+  return Pressable({
+    children: Text({ ... }),
+    onClick: props.onClick,
+    onEnter: player => backgroundColor.set('#87D481', [player]),
+    onExit: player => backgroundColor.reset([player]),
+    style: { backgroundColor, ... },
+  }),
+}
+What about Map Functions?
+Other than the straightforward way of directly setting a new value, we sometimes use a map function to get new values, for example in functional updates and derived values for a Binding. Is the map function acting on the global value or the player values?
+The answer is both! It is worth noting that both functional update and derived values respect player values. The map function will be used to mutate/derive both the global value and each player value that the Binding might have. To illustrate this in a concrete example:
+//                                        global player1 player2 player3
+const binding = new Binding(0);
+//                                binding    0      0       0       0
+binding.set(1);
+//                                binding    1      1       1       1
+binding.set(2, [player1, player2]);
+//                                binding    1      2       2       1
+binding.set(v => v + 1);
+//                                binding    2      3       3       2
+const derived = binding.derive(v => v + 1);
+//                                binding    2      3       3       2
+//                                derived    3      4       4       3
+binding.set(4, [player2, player3]);
+//                                binding    2      3       4       4
+//                                derived    3      4       5       5
+binding.set(v => v + 1, [player3]);
+//                                binding    2      3       4       5
+//                                derived    3      4       5
+Setting Player Values on Start
+Sometimes we want to set player values for each player before the player interacts with the UI. We can check this.world.getPlayers() to get the existing players and connect the OnPlayerEnterWorld event to get the new players. For example, a simple “Welcome, [player’s name]!” text would be:
+class WelcomeMessage extends UIComponent {
+  initializeUI() {
+    const message = new Binding<string>('Welcome!');
+
+    // for existing players
+    this.world.getPlayers().forEach(
+      player => message.set(`Welcome, ${player.name.get()}!`, [player]),
+    );
+
+    // for new players
+    this.connectCodeBlockEvent(
+      this.entity,
+      CodeBlockEvents.OnPlayerEnterWorld,
+      player => message.set(`Welcome, ${player.name.get()}!`, [player]),
+
+    return Text({ text: message });
+  }
+Player-Specific UI Example – A Case Study
+Let’s work on a more interesting and complicated example. Say we want to put a “Waiting for X players” text and a “Get Ready” button at the entrance of a game. When a player clicks on the button, the button becomes “Cancel” and clicking again will cancel the ready state. When X reaches zero, the button disappears and the text comes “Go!”.
+There are many different approaches to this problem. Depending on our familiarity with Bindings and the concept of state management, we might find one easier than the others. Let’s imagine two creators, Alice and Bob, and let’s see how they will implement this UI differently, and we can compare the approaches in the end.
+Alice is familiar with object-oriented programming and is comfortable about setting each property of each UI component. She looks at the UI, and realizes that there are three things that will get updated at runtime: the text prompt, the button label, and the button visibility. Alice decides to create a Binding for each of them.
+class GetReadyDialog extends UIComponent {
+  initializeUI() {
+    const textPrompt = new Binding<string>(
+      'Waiting for 8 players',
+    );
+    const buttonLabel = new Binding<string>('Get Ready');
+    const showButton = new Binding<boolean>(true);
+
+    return View({
+      children: [
+        Text({ text: textPrompt }),
+        UINode.if(
+          showButton,
+          Pressable({
+            children: Text({ text: buttonLabel }),
+            onClick: /** TODO: button effect */,
+          }),
+        ),
+      ],
+    });
+  }
+}
+She correctly realizes that the only time any of these Bindings might get updated is when any player clicks the button, so it’s sufficient to update all of the Bindings inside the onClick callback. Also, she realizes that the button label should only be updated to the player clicking the button, but the text prompt and the button visibility need to be updated for all players.
+class GetReadyDialog extends UIComponent {
+  initializeUI() {
+    const textPrompt = new Binding<string>(
+      'Waiting for 8 players',
+    );
+    const buttonLabel = new Binding<string>('Get Ready');
+    const showButton = new Binding<boolean>(true);
+
+    return View({
+      children: [
+        Text({ text: textPrompt }),
+        UINode.if(
+          showButton,
+          Pressable({
+            children: Text({ text: buttonLabel }),
+            onClick: player => {
+              // only change the acting player's button label
+              if ( /** TODO: if the player has clicked */ ) {
+                buttonLabel.set('Get Ready', [player]);
+              } else {
+                buttonLabel.set('Cancel', [player]);
+              }
+
+              // change everyone's prompt and button visibility
+              if ( /** TODO: if there are remaining slots */ ) {
+                textPrompt.set(
+                  `Waiting for ${remainingSlots} players`,
+                );
+              } else {
+                textPrompt.set('Go!');
+                showButton.set(false);
+              }
+            },
+          }),
+        ),
+      ],
+    });
+  }
+}
+She struggles a little bit with the condition she should put into those clauses, but eventually she figured it out. She should keep track of who has clicked the button or not. Once she has that, she can easily tell if there are any remaining slots, and if a particular player has clicked the button or not. She decides to create a set to track this.
+class GetReadyDialog extends UIComponent {
+  initializeUI() {
+    const readyPlayers = new Set();
+    const textPrompt = new Binding<string>('Waiting for 8 players');
+    const buttonLabel = new Binding<string>('Get Ready');
+    const showButton = new Binding<boolean>(true);
+
+    return View({
+      children: [
+        Text({text: textPrompt}),
+        UINode.if(
+          showButton,
+          Pressable({
+            children: Text({text: buttonLabel}),
+            onClick: player => {
+              if (readyPlayers.has(player)) {
+                readyPlayers.delete(player);
+                buttonLabel.set('Get Ready', [player]);
+              } else {
+                readyPlayers.add(player);
+                buttonLabel.set('Cancel', [player]);
+              }
+
+              const remainingSlots = 8 - readyPlayers.size;
+              if (remainingSlots > 0) {
+                textPrompt.set(`Waiting for ${remainingSlots} players`);
+              } else {
+                textPrompt.set('Go!');
+                showButton.set(false);
+              }
+            },
+          }),
+        ),
+      ],
+    });
+  }
+}
+Bob, on the other hand, is following the suggestions from this documentation. Unlike Alice, he doesn’t immediately care about what the UI needs to render. He decides to first think about a minimal but complete representation of the UI. He realizes that, to decide what needs to be rendered in the UI, he needs to know the number of remaining slots, which will be used to derive the text prompt and the button visibility; he also needs to know whether the player has clicked the button or not, which will be used to derive the button label.
+class GetReadyDialog extends UIComponent {
+  initializeUI() {
+    const remainingSlots = new Binding<number>(8);
+    const hasClicked = new Binding<boolean>(false);
+
+    return View({
+      children: [
+        Text({
+          text: remainingSlots.derive(r =>
+            r > 0 ? `Waiting for ${r} players` : 'Go!',
+          ),
+        }),
+        UINode.if(
+          remainingSlots.derive(r => r > 0),
+          Pressable({
+            children: Text({
+              text: hasClicked.derive(h =>
+                h ? 'Cancel' : 'Get Ready',
+              ),
+            }),
+            onClick: /** TODO: button effect */,
+          }),
+        ),
+      ],
+    });
+  }
+}
+Like Alice, Bob also realizes that he needs to update the two Bindings in the onClick callback, and that hasClicked should be updated only to the player clicking the button, and remainingSlots should be updated to everyone. When both of those Bindings are updated, the new value should depend on the old one, so he uses functional update.
+class GetReadyDialog extends UIComponent {
+  initializeUI() {
+    const remainingSlots = new Binding<number>(8);
+    const hasClicked = new Binding<boolean>(false);
+
+    return View({
+      children: [
+        Text({
+          text: remainingSlots.derive(r =>
+            r > 0 ? `Waiting for ${r} players` : 'Go!',
+          ),
+        }),
+        UINode.if(
+          remainingSlots.derive(r => r > 0),
+          Pressable({
+            children: Text({
+              text: hasClicked.derive(h =>
+                h ? 'Cancel' : 'Get Ready',
+              ),
+            }),
+            onClick: player => {
+              // only change click status for the acting player
+              hasClicked.set(h => !h, [player]);
+
+              // remaining slots should be updated for everyone
+              remainingSlots.set(r => r +
+                (/** TODO: if the player has clicked */ ? 1 : -1)
+              );
+            },
+          }),
+        ),
+      ],
+    });
+  }
+}
+The final missing piece is that he needs to update the remainingSlots depending on the value of hasClicked. How does he access this value? He realizes that he already did access this value inside the functional update for hasClicked. Now all he has to do is to put the remainingSlots update inside the functional update of hasClicked. This is a bit complicated to think about, but works perfectly.
+class GetReadyDialog extends UIComponent {
+  initializeUI() {
+    const remainingSlots = new Binding<number>(8);
+    const hasClicked = new Binding<boolean>(false);
+
+    return View({
+      children: [
+        Text({
+          text: remainingSlots.derive(r =>
+            r > 0 ? `Waiting for ${r} players` : 'Go!',
+          ),
+        }),
+        UINode.if(
+          remainingSlots.derive(r => r > 0),
+          Pressable({
+            children: Text({
+              text: hasClicked.derive(h => (h ? 'Cancel' : 'Get Ready')),
+            }),
+            onClick: player => {
+              hasClicked.set(
+                h => {
+                  remainingSlots.set(r => r + (h ? 1 : -1));
+                  return !h;
+                },
+                [player],
+              );
+            },
+          }),
+        ),
+      ],
+    });
+  }
+}
+Now that we have seen two implementations of the same UI from Alice and Bob, which one is better?
+Alice thinks hers is better, because she explicitly maintains a set of players who have clicked the button, so it’s easier to debug if anything goes wrong. It is also easier to talk to other scripts in her game if other scripts need the same information.
+Bob thinks his implementation is better. There are fewer Bindings, and the code in general is more concise. All the states are controlled by the Bindings, so he doesn’t need to manually make sure the external storage and the Bindings are synced.
+So which one is better? It is completely up to you! The “correct” choice depends on many factors: your familiarity with different techniques, the coding styles set by your team, how your scripts talk to the rest of your gaming state management system, etc. This section is not choosing one coding style for you. Rather, it is demonstrating the capabilities of the Custom UI feature for you to better understand the pros and cons of each approach.
+Player-specific Bindings and UIs are powerful tools, but would require some time to get used to. Happy coding!
+
+
+Local Mode Custom UI Scripts
+Custom UI supports local mode. It runs the attached script on the player client locally, removing the need for networking during binding update and callback response when players interact with the UI. This is the suggested solution when you want to display some player-specific UI that is only visible to a single player.
+Create custom UI with local mode scripting
+Create a UI with Custom UI gizmo and attach a TS UIComponent script.
+On the property config of the attached script, change the Script Execution Mode to Local.
+Call uiEntity.Owner.set(player) when you want to transfer a UI to the player’s local client. This call can happen inside or outside of the UIComponent scripts.
+Now the attached UIComponent script will be executed on the player’s local client, which will remove the networking during binding updates and callback response, reducing the binding and callback turnaround time to minimal.
+See sections below on detailed behavior and other optional API can be used during transfer.
+Binding and Callback Behavior
+Binding updates will only affect the owner. When the UI gizmo is locally owned by a player, global value updates (calling binding.set(newValue) without a player list) will act like player value updates (calling binding.set(newValue, [owner])), and will only affect the local player.
+Binding updates for other players will be ignored. When the UI gizmo is locally owned by a player, other players will not receive any binding value updates, neither global value updates (calling binding.set(newValue) without a player list) nor player value updates (calling binding.set(newValue, [anotherPlayer])).
+Callback logic will run on the owner client. This does not affect the case if the callback action globally synced, for example changing a color of an entity. But it may result in different behavior if the callback is interacting with other local script variables. In this case, you may want to use a network event to communicate with the server.
+UI scripts will be restarted after the transfer. After ownership of a UI gizmo is transferred (from server to player, player to player, or player to server), UI scripts will be restarted. This means all the bindings will have new instances, with their values reset to the default value provided in the script.
+Visibility and Best Practices
+A Local Mode UI gizmo is only visible to the owner and invisible to other players. Once the creator marks the UIComponent script as Local, the UI becomes invisible, until its ownership is transferred to a player, and then be visible to that player only. This is the major difference from Default mode UI which is visible to all players by default.
+There are now two types of UI visibility
+Local mode visibility: the visibility constraint when UI is in local mode
+Entity visibility: the visibility controlled by uiEntity.visible.set and uiEntity.setVisibilityForPlayers
+Those two types act as “And” logic. A player can only see the panel when both visibility types are on. For example, when a UI is transferred to a player, you can still hide the UI with uiEntity.visible.set(false). Similarly, a player cannot see a locally owned UI by other player, even if the UI has uiEntity.visible.set(true).
+Suppose there are two players (player1, player2), the visibility control looks like the following:
+ 	Default (Non Local Mode)	Local Mode, assigned to player1
+Entity Visibility false (through visible.set)
+To Player1: no To Player2: no
+To Player1: no To Player2: no
+Entity Visibility true (through visible.set)
+To Player1: yes To Player2: yes
+To Player1: yes To Player2: no
+Entity Visibility true For Player1 (through setVisibilityForPlayers)
+To Player1: yes To Player2: no
+To Player1: yes To Player2: no
+Entity Visibility true For Player2 (through setVisibilityForPlayers)
+To Player1: no To Player2: yes
+To Player1: no To Player2: no
+Because of this restriction on the visibility, we recommend treating global UIs and local UIs as separate concepts and not interchangeable. In detail:
+If you want a UI to be visible and interactable to all players, you should use Default Mode.
+If you want a UI to be visible to all players but only interactable to some, you can filter the player in the callbacks.
+If you want to hide a UI for some players but show it to them later, use uiEntity.setVisibilityForPlayers.
+If you create a Local Mode UI, always consider it as only usable to one player.
+If you want multiple players to have their own local UI at the same time, you can create multiple entity instances as a pool and assign them separately
+We also recommend implementing and testing your UIComponent script in the Default Mode first, and only change the gizmo to the Local Mode once it is working in the Default Mode already.
+Local Mode Example
+Here’s an example of implementing a local mode UI, and transfer the UI to the player who entered a trigger
+MyUI: example implementation of a normal UI
+MyUIAdvanced: example implementation of a UI that contains extra state for transfer purpose. This implementation is optional
+MyTrigger: example script that transfers the ownership
+// MyUI script, attached to Custom UI gizmo, set to *Local* mode
+
+// component props
+type TProps = { ... };
+
+class MyUI extends UIComponent<TProps> {
+  static propsDefinition: PropsDefinition<KeyDialogProps> = {
+    ...
+  };
+
+  initializeUI() {
+    return View({
+      ...
+    });
+  }
+}
+
+// Optional implementation
+// MyUIAdvanced script, attached to Custom UI gizmo, set to *Local* mode
+
+// component props
+type TProps = { ... };
+// optional extra information you want to carry when transfer UI
+// from one to another can be any SerializableState
+type TState = {
+  msg: string;
+  my_num: number;
+};
+
+class MyUIAdvanced extends UIComponent<TProps, TState> {
+  static propsDefinition: PropsDefinition<KeyDialogProps> = {
+    ...
+  
+  // optional to implement, runs on new owner client who receive the ownership
+  receiveOwnership(
+    state: TState \| null,
+    fromPlayer: Player,
+    toPlayer: Player,
+  ) {
+    console.log("this log happens on new owner client, after the transfer", state);
+  }
+
+  // optional to implement, runs on old owner client before transfer away ownership
+  transferOwnership(fromPlayer: Player, toPlayer: Player): TState {
+    console.log("this log happens on old owner client, like server, before the transfer");
+    // returning the data in TState type that's transferred to new owner
+    return {
+      msg: "some msg",
+      my_num: 123
+    };
+  }
+
+  initializeUI() {
+    return View({ ... });
+  }
+}
+
+UIComponent.register(MyUIAdvanced);
+// MyTrigger script, have an UI object as prop, and set the owner once a
+// player enter the trigger. This script stays on *Default* mode
+type Props = {ui: Entity};
+class MyTrigger extends Component<Props> {
+  static propsDefinition: PropsDefinition<Props> = {
+    ui: {type: PropTypes.Entity},
+  };
+
+  start() {
+    this.connectCodeBlockEvent(
+      this.entity,
+      CodeBlockEvents.OnPlayerEnterTrigger,
+      (player: Player) => {
+        this.props.ui.owner.set(player);
+      },
+    );
+  }
+}
+
+Component.register(MyTrigger);
+
+
+Performance Metrics for Custom UI
+There are 4 real-time metrics available to help with debugging Custom UI.
+They are:
+Total # of visible UI
+Total # of value bindings
+Total data size of bindings (in KB)
+Binding update # in every frame
+All the metrics can be seen under the realtime metrics list.
+
+As well as Scrubbing metrics.
+
+
+Animations For Custom UI
+Animations are important for creating a great gameplay experience. Custom UI provides a set of APIs to concisely build animations in a very performant way, along with configurable properties and start/stop methods to precisely control the behavior of the animations.
+Animated Binding
+The centerpiece of building a dynamic UI is the Binding class. Similarly, the centerpiece of building animations is the new AnimatedBinding class.
+import { AnimatedBinding } from 'horizon/ui';
+...
+
+initializeUI() {
+  const width = new AnimatedBinding(100);
+
+  return View({
+    children: [
+      Pressable({
+        children: Text({ text: 'Start Animation', style: { ... } }),
+        onClick: () => width.set(200),
+      }),
+      View({ style: { backgroundColor: 'red', height: 100, width } }),
+    ],
+  });
+}
+You can see that AnimatedBinding and Binding classes are similar in many ways:
+We can create a new instance and provide a default value.
+We can set an Animated Binding to a Bindable style, in place of a plain value.
+We can later change the value of the Animated Binding with the set() method.
+But they are also different in that:
+AnimatedBinding can only take number values, unlike Binding which can take any type.
+There is no derive() method on AnimatedBinding; instead, you will have to use the more restrictive interpolate() method.
+As we will see now, the set() method can take an Animation object to define a smooth and animated transition to the new value.
+Create an Animation
+When we call the set() method of an Animated Binding with a plain number, like we did above, the behavior of the Animated Binding is exactly the same as the regular Binding. The UI will be re-rendered with a new value of width, and the change is abrupt without any transition.
+However, for an Animated Binding, we can wrap the new value inside the set() method with an Animation.timing() to turn it into an animation that will smoothly transition to the new value:
+import { AnimatedBinding, Animation } from 'horizon/ui';
+...
+initializeUI() {
+
+  const width = new AnimatedBinding(100);
+
+  return View({
+    children: [
+      Pressable({
+        children: Text({ text: 'Start Animation', style: { ... } }),
+        onClick: () => width.set(Animation.timing(200)),
+      }),
+      View({ style: { backgroundColor: 'red', height: 100, width } }),
+    ],
+  });
+}
+We have created our first animation!
+You can see that there is no way to define a start value for an animation. An animation does not care about the start value; it only knows the end value that it needs to transition to. When playing an animation, the start value will be whatever the current value of the Animated Binding is. If we really want to specify a start value, we can explicitly call the set() method with a direct value before starting the animation:
+onClick: () => {
+  width.set(100);
+  width.set(Animation.timing(200));
+},
+Configuring an Animation
+You will notice that without any additional configurations, the animation is using some default duration and easing. We can customize the behavior of the animation by passing a config object to the second parameter of the Animation.timing() function.
+import { AnimatedBinding, Animation, Easing } from 'horizon/ui';
+...
+
+onClick: () => width.set(Animation.timing(200, {
+  duration: 500,
+  easing: Easing.inOut(Easing.ease),
+})),
+The config parameter of withTiming comes with two properties: duration and easing.
+The duration parameter defines how long in milliseconds the animation should take to reach the end value. The default duration is 500 milliseconds.
+The easing parameter lets us fine-tune the animation over the specified time. For example, we can make the animation gradually accelerate to full speed and slow down to a stop at the end. The default easing is Easing.inOut(Easing.ease). You can explore more provided Easing functions in the API Reference.
+Composing Animations
+Animations can be further customized by modifying them into composite animations. Custom UI provides three built-in modifiers: Delay, Repeat, and Sequence.
+We can wrap an animation with Animation.delay() to add some suspense before the animation starts. The first parameter defines the duration of the delay in milliseconds.
+onClick: () => width.set(Animation.delay(500, Animation.timing(200))),
+We can wrap an animation with Animation.repeat() to replay the same animation over and over again. Before each iteration of the animation, the Animated Binding will be reset to the default value when it is created, so that the animation is visually the same for every iteration.
+onClick: () => width.set(Animation.repeat(Animation.timing(200))),
+Animation.repeat() takes an optional second parameter indicating the number of times the animation needs to repeat. If the value is not provided, or if the value is negative (e.g. -1), the animation will repeat forever.
+onClick: () => width.set(Animation.repeat(Animation.timing(200), 5)),
+Finally, we can use Animation.sequence() to chain several animations together. We pass animations as arguments in the order we want them to run, and the next animation will start when the previous one ends.
+onClick: () => width.set(Animation.sequence(
+  Animation.timing(200),
+  Animation.timing(150),
+  Animation.timing(250),
+)),
+These three modifiers can be combined freely to create even more complex composite animations. For example, if we want an animation that bounces back and forth between 100 and 200 for three times, but pausing for 200 milliseconds before each move, we can concisely write the animation as:
+onClick: () => width.set(Animation.repeat(
+  Animation.sequence(
+    Animation.delay(200, Animation.timing(200)),
+    Animation.delay(200, Animation.timing(100)),
+  ),
+  3,
+)),
+Interpolation
+Interpolation allows us to map a value from an input range to an output range using linear interpolation. This is useful when one animation needs to change multiple styles in sync.
+For example, let’s say while we change the width of our box from 100 px to 200 px, we also want to change its opacity from 1 to 0 and create a “fade out” effect. One straightforward way is to create two Animated Bindings, and call set() on both of them when we start the animation:
+initializeUI() {
+  const width = new AnimatedBinding(100);
+  const opacity = new AnimatedBinding(1);
+
+  return View({
+    children: [
+      Pressable({
+        children: Text({ text: 'Start Animation', style: { ... } }),
+        onClick: () => {
+          width.set(Animation.timing(200));
+          opacity.set(Animation.timing(0));
+        },
+      }),
+      View({ style: {
+        backgroundColor: 'red',
+        height: 100,
+        width,
+        opacity,
+      } }),
+    ],
+  });
+}
+But with interpolation, we can also do:
+initializeUI() {
+  const width = new AnimatedBinding(100);
+
+  return View({
+    children: [
+      Pressable({
+        children: Text({ text: 'Start Animation', style: { ... } }),
+        onClick: () => width.set(Animation.timing(200)),
+      }),
+      View({ style: {
+        backgroundColor: 'red',
+        height: 100,
+        width,
+        opacity: width.interpolate([100, 200], [1, 0]),
+      } }),
+    ],
+  });
+}
+Let’s recap what happened:
+We know that the width and the opacity always change together. This indicates that we do not need two Animated Bindings for each style; we only need to change one Animated Binding.
+We keep the width to be the source of truth and animate the width change as before. We pass the Animated Binding width to the width style.
+We want to pass the same Animated Binding to the opacity style, but before we do, we need to linearly interpolate the width value to the desired opacity value, so that the start value 100 corresponds to 1, and the end value 200 corresponds to 0.
+Sometimes when the animation is too complicated, we might even create a generic Animated Binding that goes from 0 to 1, but do not pass it into any style, and always use interpolation when we set a style:
+initializeUI() {
+  const anim = new AnimatedBinding(0);
+
+  return View({
+    children: [
+      Pressable({
+        children: Text({ text: 'Start Animation', style: { ... } }),
+        onClick: () => anim.set(Animation.timing(1)),
+      }),
+      View({ style: {
+        backgroundColor: 'red',
+        height: 100,
+        width: anim.interpolate([0, 1], [100, 200]),
+        opacity: anim.interpolate([0, 1], [1, 0]),
+      } }),
+    ],
+  });
+}
+The interpolate() method takes two parameters, the input range and the output range. Both are arrays and must have at least two elements. Input and output range arrays must have the same lengths.
+When an input number is outside of the input range, it will linearly extrapolate beyond the ranges given. When the length of the range arrays is greater than 2, we are telling it to interpolate with multiple range segments. For example:
+const output = input.interpolate([-300, -100, 0, 100, 101], [300, 0, 1, 0, 0]);
+//  input:  -400  -300  -200  -100   -50   0    50  100  101  200
+// output:   450   300   150     0   0.5   1   0.5    0    0    0
+The output range of the interpolation can also take a string or Color object array, which will map the Animated Binding number value to string or Color. This is extremely useful to animate color and values with units like angles. Obviously there are some limitations on the string format and not all the strings can be interpolated. The supported string formats include:
+Suffixed numbers : Strings being a number with a unit, like "5.5%", "90deg". Make sure there is no space between number and suffix, and all strings in the output range array have the same format. (Arrays like [‘5.5%, ‘90deg’] are not allowed.)
+Colors : Different color formats can be used in the same array. You can even use Color objects and string color representations in the same array like [new Color(1, 0, 0), '#00FFFF'].
+With this functionality, we can animate some color change and rotation within the same animation:
+View({ style: {
+  backgroundColor: anim.interpolate([0, 1], ['red', '#53575E']),
+  height: 100,
+  width: anim.interpolate([0, 1], [100, 200]),
+  opacity: anim.interpolate([0, 1], [1, 0]),
+  translate: [{rotation: anim.interpolate([0, 1], ['0deg', '180deg'])}],
+} }),
+Interrupt or Stop an Animation
+Animations have duration, and take time to complete. Therefore it is possible to interrupt an animation in progress. One possible scenario is calling set() again when the previous animation is not completed. The other scenario is explicitly calling the stopAnimation() method of AnimatedBinding.
+const anim = new AnimatedBinding(0);
+anim.set(Animation.timing(20, {duration: 2000}));
+// After 1000 ms
+anim.set(Animation.timing(40, {duration: 2000}));
+// After another 1000 ms
+anim.stopAnimation();
+The stopAnimation() method will stop the current animation, regardless of which animation it is. If there is no animation in progress, the method will have no effect.
+When an animation is interrupted or stopped, the value of the underlying Animated Binding simply stays at where it stops, and is not reset. If another animation is started, the animation will start from the stopped value. In the example above, when the first animation is interrupted halfway, the value should be 10; the second animation will then go from 10 to 40. After the second animation is stopped halfway, the value should be 25. As mentioned before, if we really want to specify a start value, we can explicitly call the set() method before starting the animation.
+Callback on Animation End
+The set() method of AnimatedBinding takes a completion callback onEnd that will be called when the animation is done. If the animation finishes running normally, the completion callback will be invoked with a true value. If the animation is done because it is interrupted or stopped before it could finish, then it will receive a false value.
+The completion callback is useful to implement some side effects after an animation is done, for example, hiding some components that went out of the viewport, updating some other bindings, etc. For example, if we want to change a Text from “Not done” to “Done” after the animation finishes normally, we can have:
+initializeUI() {
+  const done = new Binding<boolean>(false);
+  const width = new AnimatedBinding(100);
+
+  return View({
+    children: [
+      Text({ text: done.derive(v => v ? 'Not done' : 'Done') }),
+      Pressable({
+        children: Text({ text: 'Start Animation', style: { ... } }),
+        onClick: () => width.set(
+          Animation.timing(200),
+          (finished: boolean) => {
+            if (finished) {
+              done.set(true);
+            }
+          },
+        ),
+      }),
+      View({ style: { backgroundColor: 'red', height: 100, width } }),
+    ],
+  });
+}
+When we want to start another animation after the previous one is done, it is recommended to use the Animation.sequence() modifier to chain several Animation objects together, rather than implementing our own chaining logic in the callbacks. This is because a sequenced Animation object is fully serializable so that the rendering stack can play the animations on its own without involving any change in the TypeScript, which would be much slower.
+The completion callback is only invoked for Animations, and is ignored for direct value updates. For example, if we call anim.set(200, () => doSomething()), the value of the Animated Binding is directly set to 200 without any animations, and doSomething() will never be called.
+There is one more caveat. Because TypeScript can run on the server, when one single set() method is called, we might have started animations on multiple clients, so the completion callback might also be invoked multiple times, once by each client. In the example above, if we have five players in the world, and suppose the animation finishes on every client, done.set(true) will be set for five times.
+Player-Specific UI
+Similar to Binding class can be used to display different content for each player, AnimatedBinding also fully supports player-specific UI. We can start or stop animation only for certain players, and the concepts of “global value” and “player value” are fully transferable.
+anim.set(
+  Animation.timing(200),
+  (finished: boolean) => { ... },
+  [player],
+);
+anim.stopAnimation([player]);
+anim.reset([player]);
+Remember that the reset() method resets the player value back to the global value. It has nothing to do with animations, and cannot take an Animation object when resetting. There is no way to reset an animation to the start value. The best we can do is to stop it.
+Also notice that for the set() method of AnimatedBindings, the players array is the third parameter, not the second as in the set() method for Bindings. We have to make room for the completion callback as the second parameter. You might need to pay attention to this difference if you migrate some Bindings into Animated Bindings.
+The completion callback onEnd inside the set() method can also take a player parameter, which indicates the player client that the animation is done on. As mentioned above, because one set() call on the server can start multiple animations, one on each client, this completion callback will also be called multiple times, once for each player. Because we are able to stop or interrupt animations for selected players, the finished boolean state in each one of those invocations might be different.
+// Assume there are 5 players in the session: player1, ..., player5
+const results = {};
+anim.set(
+  Animation.timing(200, {duration: 2000}),
+  (finished: boolean, player: Player) => {
+    results[player.id] = finished;
+  },
+  [player2, player3, player4, player5],
+);
+// After 1000 ms
+anim.stopAnimation([player3, player4]);
+// After another 2000 ms
+console.log(results);
+// {'2': true, '3': false, '4': false, '5': true}
+Functional Update
+Regular Bindings support functional updates, and so do Animated Bindings. We can wrap an update function with Animation.timing(), just like how we wrap plain numbers.
+// Plain value update
+anim.set(100);
+anim.set(Animation.timing(100));
+// Functional update
+anim.set(v => v + 10);
+anim.set(Animation.timing(v => v + 10));
+Specially, if we chain several animations with functional updates in an Animation.sequence() call, the effect is accumulative – That is, the update function of the next animation will be applied on the end value of the previous animation. For example, the following animation will go from 100 to 110, and then from 110 to 120:
+const anim = new AnimatedBinding(100);
+anim.set(Animation.sequence(
+  Animation.timing(v => v + 10),
+  Animation.timing(v => v + 10),
+);
+However, if we repeat an animation with functional update in an Animation.repeat() call, the effect is not cumulative. The same animation with the same start and end values will be replayed over and over, and the value is reset to the default value of the Animated Binding before each iteration. For example, the following animation will go from 100 to 110, and then jump back to 100, before going from 100 to 110 again:
+const anim = new AnimatedBinding(100);
+anim.set(Animation.repeat(Animation.timing(v => v + 10), 2);
+There is one more caveat about the “previous value” that the update function is applying on. Custom UI serializes the entire animation and sends it to the rendering stack, and lets the rendering stack perform the animation without TypeScript being involved during the process. Therefore, if an animation is interrupted or stopped, TypeScript cannot know the value at which the animation stops, and there is no way we can apply the next functional update against that value. The “previous value” will only get successfully updated when the animation is finished normally, that is, finished is true in the completion callback.
+const anim = new AnimatedBinding(100);
+anim.set(Animation.timing(200, {duration: 2000}));
+// After 1000 ms
+anim.set(Animation.timing(v => v + 10));
+// The first animation is interrupted at 150, and is not finished.
+// TypeScript does not know about this, still thinking the value is 100.
+// The second animation will go from 150 to 110, instead of 160.
+
+// After another 2000 ms
+// The second animation finishes successfully.
+// TypeScript is notified about the new value 110.
+anim.set(Animation.timing(v => v + 10));
+// This third animation will go from 110 to 120.
+
+
+Non-Interactive Custom UI Screen Overlay
+Custom UI helps create non-interactive screen overlays on both desktop and VR platforms. Naturally, the screen overlay experiences vary between these two platforms. This feature empowers creators to exhibit non-interactive overlay elements such as health bars or ammo counts.
+Expected Behavior
+Interaction
+If a button or a pressable component is placed within a screen overlay view and the cursor is released by any means, interaction with these components is still not possible. This behavior is consistent across mobile and VR platforms.
+Screen Mode & VR
+When we create an elaborate screen overlay for 2D platforms (i.e. mobile or desktop) and attempt to adapt it for VR, the UI renders correctly without any issues. However, the layout experience doesn’t match up to that of 2D platforms. This is because VR lacks a specific screen dimension for laying out CustomUI views.
+Through experimentation, we’ve created a canvas measuring 800px by 600px with a depth of 1 unit, which acts as a transparent overlay. This enables us to build or integrate any custom UI view into this canvas, allowing us to customize it according to our design needs and requirements.
+Full screen overlays that are positioned below the system UI and platform controls.
+Getting Started
+Based on the above information, you’ll notice that this screen overlay feature is more flexible on web and mobile than VR. Let’s start building a screen overlay on web and mobile first.
+Creating a Screen Overlay from the Ground Up
+When you create a UI with the Custom UI Gizmo, you’ll find the Display Mode property in the configuration panel under the Visual & Interaction section. 
+Switch the Display Mode to Screen Overlay.
+Next, write Typescript code to craft a screen overlay UI that aligns with your design.
+Ensure that the outermost view container includes the position: “absolute” property.
+Please be aware that the panelHeight and panelWidth properties of the UIComponent class are not applicable when creating a Screen Overlay Custom UI. Instead, we should use CSS styling to define the height and width of the view. The remaining part of the full screen will be completely transparent.
+Finally, customize the layout of the view container. For example, you can set left: 0 and bottom: 0.
+Pseudo code:
+class ScreenOverlay extends UIComponent {
+  static propsDefinition = {};
+  initializeUI() {
+    return View({
+      children: ...,
+      style: {
+        position: 'absolute',
+        height: 200,
+        width: 300,
+        backgroundColor: '#220022',
+        left: 0,
+        bottom: 0,
+      },
+    });
+  }
+}
+UIComponent.register(ScreenOverlay);
+Have an existing Custom UI spatial panel in your testing world
+If you already have Custom UI panels in your testing world, you’ll notice the Display Mode property in the configuration panel under the Visual & Interaction section. By default, this value is set to Spatial.
+While it’s possible to change this property to Screen Overlay to transform a Spatial UI into a screen overlay, we advise against this approach for several reasons:
+The panelHeight and panelWidth properties of the UIComponent class are not applicable in a Screen Overlay Custom UI.
+`On the Web and Mobile platforms, the entire full screen is used as a canvas. This necessitates defining the height and width of the Custom UI using CSS styling.
+`Due to the above two points, position: “absolute” is required in the component-level view container.
+Converting a spatial UI to a screen overlay UI involves a significant amount of changes. Our recommendation is to construct a new screen overlay from scratch, using the guidance provided in the earlier section.
+Creating Multiple Screen Overlays
+We also have the capability to display multiple screen overlays simultaneously. By incorporating various UI widgets into your world and associating each with well-crafted Typescript, you can ensure that all Custom UI screen overlays are displayed correctly on the screen.
+Assuming you already have one screen overlay from following the previous section, let’s create a new screen overlay with a different script attached.
+Pseudo code:
+class ScreenOverlay2 extends UIComponent {
+  initializeUI() {
+    return View({
+      children: ...,
+      style: {
+        position: 'absolute',
+        height: 200,
+        width: 300,
+        backgroundColor: '#220022',
+        right: 0,
+        bottom: 0,
+      },
+    });
+  }
+}
+Now that you have created these two screen overlays, you can see two UI layouts as shown in this screenshot. The content varies depending on your TypeScript code.
+
+Player-specific screen overlay
+Similar to Spatial Custom UI, we’re using the Binding class to display content for players which means you can display different screen overlay content to different for each player. Custom UI screen overlay also fully supports player-specific UI.
+Controlling Visibility of Screen overlay
+Entity Level Visibility(single screen overlay)
+The visibility of the screen overlay can be managed through the entity’s visible property. This can be achieved in two ways:
+Switch the Visible property found under the Behavior tab.
+Utilize the TypeScript APIs:
+uiEntity.visible.set
+uiEntity.setVisibilityForPlayers
+System Level Visibility
+At present, we’re facilitating these use cases to display or conceal screen overlays. In the future, we may expand our support to include more user flows for altering the visibility of screen overlays.
+Open NuxCheatSheet menu through ESC key, the screen overlay will hide. Dismiss the NuxCheatSheet, the screen overlay will show up again.
+Bring up the PUI panel, the screen overlay will hide. Dismiss the PUI panel, the screen overlay will show up again.
+The screen overlay will be dismissed in the build mode, switching to preview mode, you should see the UI attached to the screen.
+Screen Overlay Experiences in VR
+If you’ve adhered to the steps outlined above, the screen overlays we’ve developed will automatically be applied to VR when you enter the testing world with a VR device. However, there’s an important point to note here.
+There isn’t a specific dimension that we can use to properly layout the screen overlays. For Web and Mobile, the full screen dimension can be utilized as a canvas for arranging the screen overlays. In VR, we’ve set up a canvas with dimensions of 800px in width and 600px in height, which acts as a transparent overlay. The depth of this canvas is 1 unit from the avatar. This enables you to build or integrate any custom UI view into this canvas, customized to your specific design needs and requirements.
+In certain scenarios, you may observe that the UI aligns well on web and mobile platforms. However, when transitioning to the VR platform, it may not appear as visually appealing as it does in 2D. We understand that it might be challenging to accommodate all the use cases you wish to layout in VR.
+
+
+Interactive Custom UI Screen Overlay
+Overview
+An interactive screen overlay is a type of screen overlay that renders in screen-space on top of the world, just like a non-interactive screen overlay does, while allowing players to interact with UI elements within the overlay such as buttons, menu options, and more.
+Interactive, blocking screen overlays are designed to be used for situations that require the player’s immediate focus and attention. This means they are great for things like in-game shops, tutorials, and other UI that require the player to stop what they are doing and interact with the overlay before they can progress or continue playing.
+By design, interactive, blocking screen overlays prevent gameplay-related inputs in order to allow the player to focus fully on the UI, which means this feature is not suitable for creating customized on-screen controls.
+interactive overlay.gif
+Interactive, non-blocking screen overlays are designed to be used as onscreen inputs that can be fully customized in size and appearance. Interactive, non-blocking screen overlays do not prevent gameplay-related inputs, and can be used in combination with the Custom Input API to create custom on-screen controls.
+Getting Started
+When you set the Display mode property of a Custom UI panel to Screen Overlay, a property named Input mode appears. You can use this property to switch the mode of the panel from No Interaction to Interactive, Blocking or Interactive, Non-Blocking, which allows the overlay to receive input from the current input pointer (such as a mouse, touchscreen, or VR controller).
+
+You can test the interaction by adding a Pressable component to your UI script.
+Pressable pseudo code:
+Pressable({
+  children: Text({
+    text: 'Close',
+    style: {
+      color: 'white',
+    },
+  }),
+  onClick: () => {
+    console.log('Clicked Close');
+    this.entity.visible.set(false);
+  },
+  style: {
+    alignItems: 'center',
+    backgroundColor: 'red',
+    height: 36,
+    justifyContent: 'center',
+    width: 240,
+  },
+});
+Input behavior when using Interactive, Blocking Screen Overlay
+When an interactive, blocking screen overlay is visible on the screen, the following input behavior occurs:
+Desktop
+Player controls are locked
+On-screen desktop prompts disappear
+Mouse cursor is released and can be used to interact with any panel marked as Interactive, Blocking
+Mobile
+On-screen player controls are hidden and the player cannot move or look around
+System controls such as PUI and Pause remain visible
+Player can interact with any panel marked as Interactive, Blocking using touch input
+VR
+The interactive overlay is displayed on a HUD-like panel at a comfortable distance in front of the player and is locked to the camera
+Player can interact with any panel marked as Interactive, Blocking using the VR controller pointer
+Player controls such as movement are not locked
+The overlay UI on VR will still be occluded by other objects. We cannot always render it on top, and this is because avatar (and raycasting) need to be on top of the UI, thus if the UI is on top of everything, so does avatar, which is wrong because avatar will occlude with the rest of world
+Input behaviour when using Interactive, Non-Blocking Screen Overlay
+When an interactive, non-blocking screen overlay is visible on the screen, the following behaviour occurs:
+Desktop
+Interactive, non-blocking screen overlay is not currently supported for desktop players
+Mobile
+On-screen player controls are still visible (you can disable the default onscreen buttons for mobile players with the Custom Input API)
+Player can interact with any panel marked as Interactive, Non-Blocking using touch input
+VR
+The interactive, non-blocking overlay is not displayed for VR players and the player controls such as movement are not locked.
+
+
+API Reference For Custom UI
+UIComponent
+UIComponent is the base class for a UI panel, the scripting component to be attached to a UI Gizmo. It inherits all of the methods and properties from its parent Component class, with some UI-specialized additions.
+class Welcome extends UIComponent {
+  initializeUI() {
+    return Text({text: 'Hello World'});
+  }
+}
+initializeUI()
+abstract initializeUI(): UINode;
+This abstract method needs to be implemented and must return a UINode object. A UINode is usually constructed by a tree of base components and user-defined components.
+This method is called only once, before the start() method of the component. It is common to do component setup inside initializeUI(), e.g. connecting event handlers.
+panelHeight
+readonly panelHeight?: number;
+Default value: 500
+This property determines the number of pixels of the UI panel in the horizontal direction. You cannot change it after the panel is initialized.
+panelWidth
+readonly panelWidth?: number;
+Default value: 500
+This property determines the number of pixels of the UI panel in the vertical direction. You cannot change it after the panel is initialized.
+Binding
+Binding class is the container for a variable value used by the UI components. It can be passed to the supported props and styles of a component in place of an explicit value. When the value of the Binding is updated at runtime, the UI panels that use it will be automatically re-rendered to reflect the change.
+const binding = new Binding(initialValue);
+binding.set(newValue);
+A crucial concept is the difference between the “global value” and the “player values”.
+Global value refers to the value that a player would see by default. A player would see the global value, unless there is a player value set for that player. When a new player joins the world, they will also receive the global values as their initial values.
+Player value refers to the value you set for a particular player. When a player value is set for a player, that player will see the player value, instead of the global value like everyone else. Conceptually, it can be seen as a “deviation” from the global value.
+constructor()
+constructor(value: T): void;
+Parameters:
+Name	Type	Description
+value (Required)
+Generic <T>
+The initial value of the Binding.
+When you instantiate a new Binding object, you need to provide an initial value as the argument.
+set()
+set(value: T \| (pref: T) => T, players?: Player[]): void;
+Parameters:
+Name	Type	Description
+value (Required)
+T \| (prev: T) => T
+The new value of the Binding, or an update function.
+players (Optional)
+Player[]
+An optional array of players to send the value update to. If not provided, every player will receive the value update.
+This method is used to update the Binding. It sets a new value to the Binding and enqueues a re-render for all the UI panels that use this Binding. The UI will not update if the new value and the old value are the same.
+The first parameter can either be an explicit value, or an update function in the case that the new value is calculated using the previous value. The function will receive the previous value, and should return the updated value. Functional update respects player values. It will mutate both the global value and each player value.
+The second parameter is an optional array of players, and is used to determine whether the global value or the player value should be updated.
+When it is not provided, every player will receive the value update. The global value will be updated, and any player values will be cleared.
+When an array of players is provided, only those players will get the new value. They will get a new player value, but the global value is unchanged, so other players will be left unaffected.
+reset()
+reset(players?: Player[]): void;
+Parameters:
+Name	Type	Description
+players (Optional)
+Player[]
+An optional array of players to reset the value for. If not provided, all player values are cleared; if provided, only those players in the array will be reset.
+This method is used to reset the player value of a Binding, if any, back to the global value. Like the set() method, this will also enqueue a re-render for all the UI panels that use this Binding.
+Just like the set() method, reset() also takes an optional array of players.
+When it is not provided, all of the player values are cleared.
+When it is provided, only those players will have their player values reset and receive the global value. If any other players have player values, their player values are unaffected.
+derive()
+derive<R>(mapFn: (value: T) => R): DerivedBinding<R>;
+Parameters:
+Name	Type	Description
+mapFn
+(value: T) => any
+A function that specifies how the derived value is calculated from this Binding.
+This method is used to derive a new value for the Binding, using the provided map function. The function takes the value of this Binding as a parameter, and returns the derived value.
+The return type is a DerivedBinding. It functions a lot like a Binding, and can be passed to the supported props and styles of a component in place of an explicit value. However, it does not have a set() method, and its value is purely derived from the Binding that it depends on. When the value of the dependency Binding changes, the derived value is also automatically updated, which will also enqueue a re-render.
+The derived value respects any player value that the dependency Binding might have. The map function will be used to derive both the global value and each player value.
+There is also a static derive() method, where the new value is derived from multiple Bindings:
+static derive<R>(
+  dependencies: Binding<any>[],
+  mapFn: (...args: any[]) => R,
+): DerivedBinding<R>;
+Parameters:
+Name	Type	Description
+dependencies
+Binding<any>[]
+The array of Bindings to depend on.
+mapFn
+(...args: any[]) => any
+A function that specifies how the derived value is calculated from the Bindings that it depends on.
+The first parameter is an array of Bindings, and the second parameter is a map function that takes the value of each Binding, in the given order, and returns the derived new value. The Bindings and the parameters of the map function must have the same types.
+AnimatedBinding
+AnimatedBinding class is a special type of Binding and is similar to the Binding class in that it also contains a variable number value that can be passed to the Bindable styles in place of an explicit value, and can be updated at runtime to trigger an automatic re-render. AnimatedBinding is different from Binding in that:
+AnimatedBinding can only take number values, unlike Binding which can take any type.
+AnimatedBinding has no derive() method, but a more restrictive interpolate() method.
+In addition to plain numbers and update functions, the set() method can also take an Animation object to define an animated transition to the new value.
+const anim = new AnimatedBinding(initialValue);
+anim.set(Animation.timing(newValue));
+constructor()
+constructor(value: number): void;
+Parameters:
+Name	Type	Description
+value (Required)
+number
+The initial value of the Animated Binding.
+Similar to the regular Bindings, when you instantiate a new Animated Binding object, you need to provide an initial value as the argument.
+set()
+set(
+  value: number | (pref: number) => T | Animation,
+  onEnd?: (finished: boolean, player: Player) => void,
+  players?: Player[],
+): void;
+Parameters:
+Name	Type	Description
+value (Required)
+number \| (prev: number) => number \| Animation
+The new value of the Animated Binding, an update function, or an Animation object.
+onEnd (Optional)
+(finished: boolean, player: Player) => void
+Completion callback function that will be called after the animation is done, whether it finishes running normally, is interrupted or is stopped. Ignored when value is not an Animation object.
+players (Optional)
+Player[]
+An optional array of players to send the value update to. If not provided, every player will receive the value update.
+This method is used to update the Animated Binding, with or without an animation. The first parameter can either be an explicit value, or an update function, or an Animation object.
+When the first parameter is an explicit value or an update function, the behavior is the same as regular Bindings. The value of the Animated Binding is updated immediately without any animated transition. Similar to regular Bindings, the update function calculates the new value from the previous value, and respects player values by mutating both the global value and each player value.
+When the first parameter is an Animation object, the Animated Binding value will smoothly transition to the end value using the specified animation.
+The second parameter is an optional completion callback. When the first parameter is not an Animation, this callback is ignored; when the first parameter is an Animation, this callback will be invoked after the animation is done, either when the animation finishes running normally, or when it is interrupted or stopped before it could finish. The completion callback function is invoked with two parameters:
+Name	Type	Description
+finished
+boolean
+A boolean flag to indicate whether the animation finishes running normally (value will be true), or is interrupted or stopped before it could finish (value will be false).
+player
+Player
+The player client that this animation completion event is sent from.
+To play multiple animations for the same Animated Binding in a sequence, it is better to use the Animation.sequence() modifier rather than starting the next animation in the onEnd completion callback, for performance reasons. To play an animation or update value for a different Binding, do so in the onEnd completion callback.
+The third parameter is an optional array of players to determine whether the global value or the player value should be updated. It has the same behavior as the regular Bindings.
+When an array of players is not provided, every player will receive the value update or see the animation. The global value will be updated, and any player values will be cleared.
+When an array of players is provided, only those players will get the new value or see the animation. They will get a new player value, but the global value is unchanged, so other players will be left unaffected.
+reset()
+reset(players?: Player[]): void;
+Parameters:
+Name	Type	Description
+players (Optional)
+Player[]
+An optional array of players to reset the value for. If not provided, all player values are cleared; if provided, only those players in the array will be reset.
+This method is used to reset the player value back to the global value, and has the same behavior as the regular Bindings. Resetting an Animated Binding can only be an immediate update and cannot take an Animation. Similar to set(), it also takes an optional array of players.
+When an array of players is not provided, all of the player values are cleared.
+When an array of players is provided, only those players will have their player values reset and receive the global value. If any other players have player values, their player values are unaffected.
+stopAnimation()
+stopAnimation(players?: Player[]): void;
+Parameters:
+Name	Type	Description
+players (Optional)
+Player[]
+An optional array of players to stop the animation for. If not provided, animations are stopped for all players; if provided, animations are stopped only for those players in the array.
+This method is used to stop the animation currently in progress. If there is no animation in progress, the call will have no effect. Similar to set(), it also takes an optional array of players.
+When an array of players is not provided, animations will be stopped for all of the players.
+When an array of players is provided, animations will be stopped only for those players in the array.
+interpolate()
+interpolate<T extends number | string | Color>(
+  inputRange: number[],
+  outputRange: T[],
+): AnimatedInterpolation<T>;
+Parameters:
+Name	Type	Description
+inputRange
+number[]
+An array of numbers specifying the input range of the interpolation.
+outputRange
+number[] \| string[] \| Color[]
+An array of numbers, strings, or Color objects specifying the output range of the interpolation.
+This method is used to map the value of an Animated Binding to a new range with linear interpolation. It takes two arrays as the input and output ranges, and returns the interpolated value.
+The return type is an AnimatedInterpolation. It functions a lot like an Animated Binding, and can be passed to the supported styles of a component in place of an explicit value. However, it does not have a set() method, and its value completely depends on the Animated Binding that it interpolate from. Conceptually it is very similar to the DerivedBinding class, although they are constructed differently.
+The first parameter is the input range, represented by an array of numbers:
+It must have at least 2 elements.
+It must be monotonically non-decreasing.
+It must not contain positive or negative infinity.
+The second parameter is the output range, represented by an array of numbers, strings, or Color objects:
+It must have the same length as the input range.
+It must not contain positive or negative infinity.
+When the elements are strings or Color objects, all elements must be in the same category.
+If the elements are suffixed numbers (a number with a unit, like "5.5%", "90deg"), there must be no space between number and suffix, and all elements must have the same suffix.
+If the elements are colors, different color formats can be used in the same array.
+When the length of the input and output ranges is greater than 2, the Animated Binding is interpolated with multiple range segments. Within each segment, the value is interpolated linearly.
+When an input number is outside of the input range, it will linearly extrapolate beyond the ranges given. To achieve a clamped extrapolation, you can add a small flat segment outside of the range.
+Animation
+Animation class represents a simple or composite animation, which can be passed into the set() method of an Animated Binding to start an animation.
+anim.set(Animation.repeat(Animation.timing(endValue, {duration: 300})));
+timing()
+static timing(
+  endValue: number | (prev: number) => number,
+  config?: {
+    duration?: number,
+    easing?: Easing,
+  },
+): Animation;
+Parameters:
+Name	Type	Description
+endValue
+number \| (prev: number) => number
+The target value of the Animated Binding, or an update function.
+config (Optional)
+{duration?: number, easing?: Easing}
+The configuration of the timing Animation to specify duration and easing function.
+This method creates an animation based on duration and easing curve.
+The first parameter can either be an explicit number value, or an update function. Functional update works the same way as in the set() method.
+The second parameter is an optional configuration object. If not provided, all default values will be used.
+Name	Type	Description
+duration
+number
+[Default: 500] Length of the animation (in milliseconds).
+easing
+Easing
+[Default: Easing.inOut(Easing.ease)] An easing function to define the animation curve.
+Easing
+An easing function allows you to fine-tune the animation over the specified time duration. Because the entire Animation object must be serializable, we do not support custom easing functions. Custom UI provides a selection of built-in easing functions in the Easing module:
+back provides a simple animation where the object goes slightly back before moving forward.
+bezier(x1: number, y1: number, x2: number, y2: number) provides a bezier curve.
+bounce provides a bouncing animation.
+circle provides a circular function.
+cubic provides a cubic function.
+ease provides a simple inertial animation. Equivalent to bezier(0.42, 0, 1, 1).
+elastic(bounciness?: number) provides a simple spring interaction.
+exp provides an exponential function.
+linear provides a linear function. Equivalent to bezier(0, 0, 1, 1).
+poly(n: number) can be used to implement quartic, quintic, and other higher power functions.
+quad provides a quadratic function.
+sin provides a sinusoidal function.
+Custom UI also provides the following helpers to modify other easing functions:
+in(easing: Easing) runs an easing function forwards.
+inOut(easing: Easing) makes any easing function symmetrical.
+out(easing: Easing) runs an easing function backwards.
+sequence()
+static sequence(...animations: Animation[]): Animation;
+Parameters:
+Name	Type	Description
+...animations
+...Animation[]
+Any number of Animation objects to be chained in the sequence.
+This method creates an animation that chains a few animations together in a sequence.
+For performance reasons, it is better to use the Animation.sequence() modifier rather than starting the next animation in the onEnd completion callback if you want to play multiple animations for the same Animated Binding in a sequence. However, to chain animations for different Animated Bindings in a sequence, you will have to do so in the onEnd completion callback.
+When chaining animations with functional updates in a sequence, the effect is cumulative. The update function of the next animation will be applied on the end value of the previous animation.
+repeat()
+static repeat(animation: Animation, iterations?: number): Animation;
+Parameters:
+Name	Type	Description
+animation
+Animation
+An Animation object to repeat.
+iterations (Optional)
+number
+[Default: -1] The number of times the animation is going to be repeated. A negative value (e.g. -1) will repeat the animation indefinitely until it is interrupted or stopped.
+This method creates an animation that repeats the given animation the given number of times or runs it indefinitely. Before each iteration of the animation, the Animated Binding will be reset to the default value when it is created.
+The second parameter is an optional number that indicates the number of iterations that the animation should repeat. If not provided, or if the number is a negative value, the animation will repeat indefinitely, until it is interrupted or stopped.
+When repeating an animation with functional update, the effect is not accumulative. The same animation with the same start and end values will be replayed.
+delay()
+static delay(time: number, animation: Animation): Animation;
+Parameters:
+Name	Type	Description
+time
+number
+Duration (in milliseconds) before the animation starts.
+animation
+Animation
+An Animation object to delay.
+This method creates an animation that starts the given animation after a delay.
+Type Definitions
+UIChildren
+type UIChildren = UINode \| UINode[];
+Bindable
+type Bindable<T> = T \| Binding<T> \| DerivedBinding<T>;
+Callback
+type Callback = (player: Player) => void;
+ColorValue
+type ColorValue = string \| Color;
+Specifically, when the color is represented by a string, the following formats are allowed:
+RGB Hexadecimal - e.g. “#53575E”,
+RGB (Red, Green, Blue) - e.g. “rgb(100, 50, 0)”,
+RGBA (Red, Green, Blue, Alpha) - e.g. “rgba(255, 105, 180, 0)”,
+HSL (Hue, Saturation, Lightness) - e.g. “hsl(0, 50%, 50%)”,
+Named colors - e.g. “dodgerblue”.
+Components
+Custom UI feature provides a number of base components for you to build more complicated user-defined components and UI panels. A component is essentially a function that takes an object of props and returns a UINode. For the following documentation, we list the supported props and their usages.
+UINode
+UINode class is the opaque data structure representing an UI element. It is the returned value type for all components. You cannot instantiate a new UINode directly; a UINode can only be created through the provided components.
+if()
+static if(
+  condition: Bindable<boolean>,
+  trueComponent?: UIChildren,
+  falseComponent?: UIChildren,
+): UINode;
+Parameters:
+Name	Type	Description
+condition (Required)
+Bindable<boolean>
+The condition to check.
+trueComponent (Optional)
+UIChildren
+The UI element to render when the condition is true. Optional. If not provided (or when it is undefined), nothing will be rendered when the condition is true.
+falseComponent (Optional)
+UIChildren
+The UI element to render when the condition is false. Optional. If not provided, nothing will be rendered when the condition is false.
+This static method is used to conditionally render the UI element based on a condition. Although the return type is a UINode, it is not really a node in the DOM tree. The components in the argument, if rendered, will appear in the DOM tree.
+View
+View is the most fundamental component for building a UI. It is a container for other components and can have zero to many children of any type. It supports the flex layout and many styles.
+const view = View({
+  children: Text({text: 'Hello World'}),
+  style: {alignItems: 'center', height: 200},
+});
+Props:
+Name	Type	Description
+children
+UIChildren
+The nested children components. Can be a single UINode or an array of UINodes.
+style
+ViewStyle
+The style applied to the component.
+Text
+Text component displays text.
+const text = Text({
+  text: 'Hello World',
+  style: { color: 'red', fontFamily: 'Anton' },
+});
+Props:
+Name	Type	Description
+numberOfLines
+number
+The number of lines to display. If the text is too long, it will be truncated with ellipsis at the end.
+style
+TextStyle
+The style applied to the component.
+text (Required)
+Bindable<string>
+The text to display.
+Image
+Image component displays an image from different types of sources, including network images, VR photos, and texture assets.
+const image = Image({
+  source: ImageSource.fromTextureAsset(asset),
+  style: {height: 200, width: 200},
+});
+Props:
+Name	Type	Description
+source
+Bindable<ImageSource>
+The source of the image, constructed from the static methods of the ImageSource class. Currently supported sources include texture assets.
+style
+ImageStyle
+The style applied to the component.
+ImageSource
+ImageSource class defines the source of an image used by the Image components, which can be constructed by calling one of its static methods.
+fromTextureAsset()
+static fromTextureAsset(texture: TextureAsset): ImageSource;
+Parameters:
+Name	Type	Description
+texture (Required)
+TextureAsset
+The Asset object of the texture.
+Pressable
+Pressable is an interactive component that can receive player input events. It is a wrapper and can have children components inside.
+const button = Pressable({
+  children: Text({text: 'Click Me'}),
+  onClick: () => {
+    eventHandler();
+  },
+});
+Props:
+Name	Type	Description
+children
+UIChildren
+The nested children components. Can be a single UINode or an array of UINodes.
+disabled
+Bindable<boolean>
+[Default: ‘false’]
+If true, onClick and onRelease callbacks are disabled.
+onClick
+Callback
+Called immediately after onRelease.
+onEnter
+Callback
+Called when the player moves the raycast or the mouse into the component.
+onExit
+Callback
+Called when the player moves the raycast or the mouse out of the component.
+onPress
+Callback
+Called when the player presses down the controller trigger or the mouse.
+onRelease
+Callback
+Called when the player releases the controller trigger or the mouse.
+propagateClick
+boolean
+[Default: true]
+Events propagate to the parent by default. If false, event propagations are stopped.
+style
+ViewStyle
+The style applied to the component.
+ScrollView
+Just like its React Native parent with the same name, ScrollView is the scrollable version of View. It supports horizontal and vertical scrolling, as well as distinct styling for the view itself and underlying content wrapper.
+const scrollView = ScrollView({
+  children: Text({text: 'Content'}),
+  contentContainerStyle: {height: 1200, alignItems: 'center'},
+  horizontal: true,
+  style: {height: 200, width: 200},
+});
+Props:
+Name	Type	Description
+children
+UIChildren
+Identical to View, this is for nested child components. Can be a single UINode or an array of UINodes.
+contentContainerStyle
+ViewStyle
+The style applied to the content container which wraps all the child nodes.
+horizontal
+boolean
+Optional flag to determine whether the view should scroll horizontally rather than vertically. Default is false.
+style
+ViewStyle
+The style applied to the ScrollView frame.
+Styles
+LayoutStyle
+Name	Type	Description
+display
+Bindable<'none' \| 'flex'>
+[Default: 'flex']
+
+Similar to display in CSS, but only supports ‘none’ and ‘flex’. The display mode of the UI element.
+
+none: The UI element is not rendered.
+
+flex: The UI element is displayed as a block. This is the default value.
+height
+Bindable<number \| string>
+Similar to height in CSS, but only supports points and percentages. Ems and other units are not supported.
+width
+Bindable<number \| string>
+Similar to width in CSS, but only supports points and percentages. Ems and other units are not supported.
+bottom
+number \| string
+Similar to bottom in CSS, but only supports points and percentages. Ems and other units are not supported.
+end
+number \| string
+Equivalent to right when direction is 'ltr'. Equivalent to left when direction is 'rtl'.
+left
+number \| string
+Similar to left in CSS, but only supports points and percentages. Ems and other units are not supported.
+right
+number \| string
+Similar to right in CSS, but only supports points and percentages. Ems and other units are not supported.
+start
+number \| string
+Equivalent to left when direction is 'ltr'. Equivalent to right when direction is 'rtl'.
+top
+number \| string
+Similar to top in CSS, but only supports points and percentages. Ems and other units are not supported.
+minWidth
+number \| string
+Similar to min-width in CSS, but only supports points and percentages. Ems and other units are not supported.
+maxWidth
+number \| string
+Similar to max-width in CSS, but only supports points and percentages. Ems and other units are not supported.
+minHeight
+number \| string
+Similar to min-height in CSS, but only supports points and percentages. Ems and other units are not supported.
+maxHeight
+number \| string
+Similar to max-height in CSS, but only supports points and percentages. Ems and other units are not supported.
+margin
+number \| string
+Setting margin has the same effect as setting each of marginTop, marginLeft, marginBottom, and marginRight.
+marginBottom
+number \| string
+Works like margin-bottom in CSS.
+marginEnd
+number \| string
+Equivalent to marginRight when direction is 'ltr'. Equivalent to marginLeft when direction is 'rtl'.
+marginHorizontal
+number \| string
+Setting marginHorizontal has the same effect as setting both marginLeft and marginRight.
+marginLeft
+number \| string
+Works like margin-left in CSS.
+marginRight
+number \| string
+Works like margin-right in CSS.
+marginStart
+number \| string
+Equivalent to marginLeft when direction is 'ltr'. Equivalent to marginRight when direction is 'rtl'.
+marginTop
+number \| string
+Works like margin-top in CSS.
+marginVertical
+number \| string
+Setting marginVertical has the same effect as setting both marginTop and marginBottom.
+padding
+number \| string
+Setting padding has the same effect as setting each of paddingTop, paddingBottom, paddingLeft, and paddingRight.
+paddingBottom
+number \| string
+Works like padding-bottom in CSS.
+paddingEnd
+number \| string
+Equivalent to paddingRight when direction is 'ltr'. Equivalent to paddingLeft when direction is 'rtl'.
+paddingHorizontal
+number \| string
+Setting paddingHorizontal has the same effect as setting both paddingLeft and paddingRight.
+paddingLeft
+number \| string
+Works like padding-left in CSS.
+paddingRight
+number \| string
+Works like padding-right in CSS.
+paddingStart
+number \| string
+Equivalent to paddingLeft when direction is 'ltr'. Equivalent to paddingRight when direction is 'rtl'.
+paddingTop
+number \| string
+Works like padding-top in CSS.
+paddingVertical
+number \| string
+Setting paddingVertical has the same effect as setting both paddingTop and paddingBottom.
+position
+'absolute' \| 'relative'
+[Default: 'relative']
+
+Similar to position in CSS, but everything is set to 'relative' by default, so ‘absolute’ positioning is always relative to the parent.
+flexDirection
+'row'
+'row-reverse'
+'column'
+'column-reverse'
+[Default: 'column'] Works like flex-direction in CSS, except the default is ‘column’. Controls the direction of the main axis, in which the children are stacked.
+flexWrap
+'nowrap'
+'wrap'
+'wrap-reverse'
+[Default: 'nowrap'] Works like flex-wrap in CSS. Controls whether children can wrap around after they hit the end of a flex container.
+justifyContent
+'flex-start'
+'flex-end'
+'center'
+'space-between'
+'space-around'
+'space-evenly'
+[Default: ‘flex-start’] Works like justify-content in CSS. Aligns children in the main direction (along the main axis). For example, if children are flowing vertically, justifyContent controls how they align vertically.
+alignContent
+'flex-start'
+'flex-end'
+'center'
+'stretch'
+'space-between'
+'space-around'
+[Default: 'flex-start'] Works like align-content in CSS. Aligns rows or columns in the cross direction (perpendicular to the main axis). Only works if flexWrap is enabled and there are multiple rows or columns.
+alignItems
+'flex-start'
+'flex-end'
+'center'
+'stretch'
+'baseline'
+[Default: 'stretch'] Works like align-items in CSS. Aligns children within a row or column in the cross direction (perpendicular to the main axis). For example, if children are flowing vertically, alignItems controls how they align horizontally.
+alignSelf
+'auto'
+'flex-start'
+'flex-end'
+'center'
+'stretch'
+'baseline'
+[Default: 'auto'] Works like align-self in CSS. Controls how a child aligns in the cross direction (perpendicular to the main axis), overriding the alignItems of the parent.
+overflow
+'visible' \| 'hidden'
+[Default: 'visible'] Works like overflow in CSS. Controls how children are measured and displayed. 'hidden' causes views to be clipped.
+flex
+number
+flex does not work the same way as in CSS. flex is a number rather than a string. When flex is a positive number, the component is flexible and will be sized proportional to its flex value. So a component with flex set to ‘2’ will take twice the space as a component with flex set to ‘1’. flex: X (where X is a positive number) equates to flexGrow: X, flexShrink: 1, flexBasis: 0. When flex is ‘0’ , the component is inflexible and is sized according to width and height. When flex is ‘-1’, the component is normally sized according to width and height. However, if there’s not enough space, the component will shrink to its minWidth and minHeight.
+flexGrow
+number
+[Default: ‘0’] Works like flex-grow in CSS. Accepts a float number >= 0. Describes how the remaining space in the container should be distributed among its children along the main axis. After laying out its children, a container will distribute any remaining space among its children weighted by the children’s flexGrow values.
+flexShrink
+number
+[Default: ‘0’] Works like flex-shrink in CSS. Accepts a float number >= 0. Describes how to shrink children along the main axis when the total size of the children overflows the size of the container. A container will shrink its children weighted by the children’s flexShrink values. flexShrink is very similar to flexGrow and can be thought of in the same way if any overflowing size is considered to be negative remaining space. These two properties also work well together.
+flexBasis
+number \| string
+Works like flex-basis in CSS. Specifies the default size of an item along the main axis of the container, that is, the size of the item before any flexGrow and flexShrink calculations are performed.
+aspectRatio
+number
+Controls the size of the undefined dimension of a component. It takes min/max dimensions into account. If one of width/height is set, aspect ratio controls the size of the unset dimension. If flex basis/grow/shrink is set, aspect ratio controls the size of the node in the cross axis if unset.
+zIndex
+number
+Works like z-index in CSS. Controls which components display on top of others – components with a larger zIndex will render on top. If zIndex are not specified, components render according to their order in the document tree – later components draw over earlier ones. zIndex can be used if you don’t want this default behavior.
+layoutOrigin
+[number, number]
+[Default: '[0, 0]'] The origin of the UI element when position is 'absolute', where [0, 0] is the top left of the element and [1, 1] is the bottom right of the element.
+direction
+'inherit'
+'ltr'
+'rtl'
+[Default: 'inherit'] Specifies the directional flow of the user interface.
+BorderStyle
+Name	Type	Description
+borderColor
+Bindable<ColorValue>
+Works like border-color in CSS. The color of the border.
+borderRadius
+number
+Works like border-radius in CSS. The radius of the border.
+borderBottomLeftRadius
+number
+Works like border-bottom-left-radius in CSS. The radius of the bottom left corner.
+borderBottomRightRadius
+number
+Works like border-bottom-right-radius in CSS. The radius of the bottom right corner.
+borderTopLeftRadius
+number
+Works like border-top-left-radius in CSS. The radius of the top left corner.
+borderTopRightRadius
+number
+Works like border-top-right-radius in CSS. The radius of the top right corner.
+borderWidth
+Bindable<number>
+Works like border-width in CSS, but only supports points. The width of the border.
+borderBottomWidth
+number
+Works like border-bottom-width in CSS. The width of the bottom border.
+borderEndWidth
+number
+Equivalent to borderRightWidth when direction is 'ltr'. Equivalent to borderLeftWidth when direction is 'rtl'.
+borderLeftWidth
+number
+Works like border-left-width in CSS. The width of the left border.
+borderRightWidth
+number
+Works like border-right-width in CSS. The width of the right border.
+borderStartWidth
+number
+Equivalent to borderLeftWidth when direction is 'ltr'. Equivalent to borderRightWidth when direction is 'rtl'.
+borderTopWidth
+number
+Works like border-top-width in CSS. The width of the top border.
+ShadowStyle
+Name	Type	Description
+shadowColor
+Bindable<ColorValue>
+The drop color of the shadow.
+shadowFalloff
+'linear'
+'sqrt'
+'sigmoid'
+The falloff function, or fading, of the shadow.
+shadowOffset
+[number, number]
+The offset of the shadow in [x, y] format.
+shadowOpacity
+Bindable<number>
+The opacity of the shadow. The number is multiplied by the color’s alpha component, and should be in the range from ‘0.0’ to ‘1.0’.
+shadowRadius
+number
+The blur radius of the shadow.
+shadowSpreadRadius
+number
+The radius by which the shadow expands or shrinks under the component. May take a negative number.
+TransformStyle
+Name	Type	Description
+transform
+Array<{rotate:Bindable<string>}
+\| {scale:Bindable<number>}
+\| {scaleX:Bindable<number>}
+\| {scaleY:Bindable<number>}
+\| {translate:[Bindable<number>,Bindable<number>]}
+\| {translateX:Bindable<number>}
+\| {translateY:Bindable<number>}
+\| {skewX:Bindable<string>}
+\| {skewY:Bindable<string>}
+transform accepts an array of transformation objects. Each object specifies the property that will be transformed as the key, and the value to use in the transformation.
+
+rotate: Rotate the element around the transformOrigin. Value requires a string expressed in degrees (e.g. ‘45deg’ ) or radians (e.g. ‘0.7854rad’).
+
+scale: Scale the element uniformly by the given multiplier, with the transformOrigin being the fixed point. Equivalent to providing the same value to both scaleX and scaleY.
+
+scaleX: Scale the element horizontally by the given multiplier.
+
+scaleY: Scale the element vertically by the given multiplier.
+
+translate: Move the element by the given x and y values in [x, y] format. Equivalent to providing the values to translateX and translateY independently.
+
+translateX: Move the element horizontally by the given value in pixels.
+
+translateY: Move the element vertically by the given value in pixels.
+
+skewX: Skew the element horizontally by the given angle, represented in degrees or radians.
+
+skewY: Skew the element vertically by the given angle, represented in degrees or radians.
+transformOrigin
+[number \| string, number \| string]
+[Default: [‘50%’, ‘50%’]]
+
+The origin point of the transform, specified as an [x, y] array, where [0, 0] denotes the top left corner of the UI element. Each component can be a number in pixels or a percentage string.
+ViewStyle
+Inherits LayoutStyle, BorderStyle, ShadowStyle, and TransformStyle.
+Name	Type	Description
+backgroundColor
+Bindable<ColorValue>
+Works like 'background-color' in CSS. The background color of the component.
+backgroundClip
+'border-box' \| 'padding-box'
+[Default: 'border-box']
+
+Controls whether to render the background behind the border. Useful when the border color is transparent.
+opacity
+Bindable<number>
+Set an opacity for the component. The number should be in the range from ‘0.0’ to ‘1.0’.
+gradientColorA
+Bindable<ColorValue>
+The starting color of the gradient background.
+gradientColorB
+Bindable<ColorValue>
+The ending color of the gradient background.
+gradientXa
+number \| string
+The x component of the starting position (corresponding to gradientColorA) of the gradient background. The value is a percentage as a number (from ‘0.0’ to ‘1.0’) or a string (from ‘0%’ to ‘100%’).
+gradientYa
+number \| string
+The y component of the starting position (corresponding to gradientColorA ) of the gradient background. The value is a percentage as a number (from ‘0.0’ to ‘1.0’) or a string (from ‘0%’ to ‘100%’).
+gradientXb
+number \| string
+The x component of the ending position (corresponding to gradientColorB) of the gradient background. The value is a percentage as a number (from ‘0.0’ to ‘1.0’) or a string (from ‘0%’ to ‘100%’).
+gradientYb
+number \| string
+The y component of the ending position (corresponding to gradientColorB) of the gradient background. The value is a percentage as a number (from ‘0.0’ to ‘1.0’) or a string (from ‘0%’ to ‘100%’).
+gradientAngle
+string
+The gradient direction, pointing from the ending position to the starting position (gradientColorA is in the direction of gradientAngle). Default is ‘0deg’, which is equivalent to gradientYa: 0, gradientYb: 1. The value is represented in degrees.
+TextStyle
+Inherits ViewStyle. Unfortunately, italics are not supported by the framework at the moment. Also, there are only a limited number of custom fonts available at the moment.
+Name	Type	Description
+color
+Bindable<ColorValue>
+[Default: 'white']
+The color of the text.
+fontFamily
+string
+[Default: 'Roboto']
+The font family of the text.
+fontSize
+Bindable<number>
+[Default: '20']
+The font size of the text.
+fontWeight
+Bindable<'normal'
+\| 'bold'
+\| '100'
+\| '200'
+\| '300'
+\| '400'
+\| '500'
+\| '600'
+\| '700'
+\| '800'
+\| '900' >
+[Default: 'normal']
+The font weight. Not all fonts have all the weight variations. If the specified variation does not exist, it will fallback to the closest one.
+letterSpacing
+number
+The spacing between the characters of the text. By default there is no extra letter spacing.
+lineHeight
+number
+The height of each line in the text.
+textAlign
+'auto' \| 'left' \| 'right' \| 'center'
+The alignment of the text.
+textAlignVertical
+'auto' \| 'top' \| 'bottom' \| 'center'
+The vertical alignment of the text.
+textDecorationLine
+Bindable<'none' \| 'underline' \| 'line-through' \| 'underline line-through' >
+Additional text decorations.
+textShadowColor
+Bindable<[ColorValue]>
+The color of the text shadow. Text shadow is only drawn when a nonzero textShadowOffset is set.
+textShadowOffset
+[number, number]
+The offset of the text shadow, in pixels, in [x, y] format.
+textShadowRadius
+number
+The blur radius of the text shadow. Text shadow is only drawn when textShadowOffset is set.
+whiteSpace
+'normal' \| 'pre-line' \| 'pre-wrap'
+Additional space if needed for justification.
+Available Fonts
+Font Family	Weight Variations	Preview
+Anton
+‘normal’/’400’
+
+Bangers
+‘normal’/’400’
+
+Kallisto
+‘bold’/’700’
+
+Optimistic
+‘normal’/’400’
+
+ 
+‘500’
+
+ 
+‘bold’/’700’
+
+Oswald
+‘normal’/’400’
+
+Roboto
+‘100’
+
+ 
+‘300’
+
+ 
+‘normal’/’400’
+
+ 
+‘500’
+
+ 
+‘bold’/’700’
+
+ 
+‘900’
+
+Roboto-Mono
+‘normal’/’400’
+
+ 
+‘500’
+
+ 
+‘bold’/’700’
+
+ImageStyle
+Inherits ViewStyle.
+Name	Type	Description
+resizeMode
+'cover' \| 'contain' \| 'stretch' \| 'center' \| 'repeat'
+[Default: 'cover']
+
+Determines how to resize the image when the frame doesn’t match the raw image dimensions.
+
+cover: Scale the image uniformly (maintain the aspect ratio) so that at least one of width and height will be equal to the corresponding dimension of the view, and the other will be larger.
+
+contain: Scale the image uniformly (maintain the aspect ratio) so that both width and height will be equal to or less than the corresponding dimension of the view.
+
+stretch: Scale width and height independently, which may change the aspect ratio of the source.
+
+center: Center the image in the view along both dimensions. If the image is larger than the view, scale it down uniformly so that it is contained in the view.
+
+repeat: Repeat the image to cover the frame of the view. The image will keep its size and aspect ratio if it is smaller than the view, and will be scaled down uniformly so that it is contained in the view if it is larger than the view.
+tintColor
+Bindable<ColorValue>
+Changes the color of all the non-transparent pixels to the tintColor.
+tintOperation
+'replace' \| 'multiply'
+Changes how the tint color is applied to the original image source.
+
+
+Custom UI Dynamic List
+Overview
+Custom UI dynamic lists are a component that allows you to modify UI elements during runtime.
+Without the dynamic list feature, rendering a list of 10 items would require creating a component for one item and manually duplicating it nine times in the TypeScript code. Moreover, since the data model was static, adding or removing items during runtime would not be not possible. With dynamic lists, you only need to implement a renderItem function and pass an array of objects to the data prop. This allows you to easily add or remove items at runtime by modifying the data property.
+Disclaimers
+Dynamic list size. Since dynamic lists are built upon the existing custom UI system, they have certain limitations. Notably, the data size of child components within the dynamic list is restricted to 64KB or less. Exceeding this limit will result in an error.
+Nested dynamic lists. Nested dynamic lists aren’t supported due to the data size limitations for dynamic list children components.
+Managing the data state. The dynamic list doesn’t retain any memory of previously configured data. Each time you update the data binding, it will render a new list with the updated data, effectively replacing the previous state. To preserve your previous state and be able to add or remove items, you’ll need to manage the data state independently, outside of the dynamic list component.
+Dynamic list API
+export type DynamicListProps<T> = {
+ data: Binding<T[]>;
+ renderItem: (item: T, index?: number) => UINode;
+ style?: ViewStyle; // optional
+};
+data: Binding<T[]>
+Description: The data prop is a binding that holds an array of items of type T. This array will be used to render a list of items in the component.
+Type: Binding<T[]>, where T is the type of each item in the array.
+Purpose: To provide the component with the data it needs to render a list of items.
+renderItem: (item: T, index?: number) => UINode
+Description: The renderItem prop is a function that takes an item of type T and optional index as input and returns a UINode (a user interface node).
+Type: A function that maps an item of type T to a UINode.
+Purpose: To define how each item in the data array should be rendered in the component. The function will be called for each item in the array, and the returned UINode will be used to display the item in the list.
+How to create a dynamic list component
+To create a dynamic list component, you must provide two required props:
+data: The array of items to be rendered in the list.
+renderItem: A function that defines how each item in the data array should be rendered.
+In addition, youk can optionally pass a style prop, which allows you to modify the layout and appearance of the list. The style prop accepts values similar to ViewStyle props, providing flexibility in customizing the look and feel of your dynamic list component.
+The following code sample shows an example of creating a dynamic list. It shows passing a single binding with an array of objects to the data prop. The number of items rendered will dynamically adjust based on the data passed in, allowing for a flexible and variable-length list.
+import { DynamicList} from '@horizon/ui';
+class UIDemo extends UIComponent<typeof UIDemo> {
+  static propsDefinition = { };
+
+  countClick = 0;
+  initializeUI() {
+    type Item = {
+      id: number;
+      name: string;
+    };
+    const items: Item[] = [{ id: 1, name: "Item 0" }];
+    const dataInput = new Binding<Item[]>(items);
+
+    return
+        View({
+          children: [
+            DynamicList({data: dataInput, renderItem : (item: Item, index?: number)=> {
+              const itemBackgroundColor = new Binding<ColorValue>('blue');
+              return Text({text: item.name + ' ' + index, style: {color: 'red', fontSize: 24, fontWeight: 'bold', backgroundColor: itemBackgroundColor}});
+            }, style: {width: 200, marginRight: 10,}}),
+          ],
+          style: {flexDirection: "row"},
+        });
+  }
+}
+How to update a dynamic list during runtime
+The data prop is a binding, which means you can update it dynamically during runtime to change the rendered list. For instance, you could create an onClick function that modifies the data, allowing the list to update and render the new items in real-time.
+For example, you could have a pressable component with this onclick callback to alter the dynamic list data prop.
+ onClick: () => {
+     this.countClick += 1;
+     const newItem: Item = {
+         id: this.countClick,
+         name: `Item ${this.countClick}`
+      };
+      itemsLeft.push(newItem);
+      dataInputLeft.set(items);
+  }
+The dynamic list itself doesn’t retain any memory of previously configured data. Each time you update the data binding, it will render a new list with the updated data, replacing the previous state. To preserve your previous state and be able to add or remove items, you’ll need to manage the data state independently, outside of the dynamic list component.
+How to use multiple dynamic lists
+This code sample shows how to include multiple instances of dynamic lists in the same script, each with its own data and behavior.
+        View({
+          children: [
+            DynamicList({data: dataInputLeft, renderItem : (item: Item, index?: number)=> {
+              const itemBackgroundColor = new Binding<ColorValue>('blue');
+              return Pressable(
+                {children:[
+                  Text({text: item.name + ' ' + index, style: {color: 'red', fontSize: fontBinding, fontWeight: 'bold', backgroundColor: itemBackgroundColor}})
+                ],
+                onClick: (player: Player)=>{
+                  console.log('onclick get triggered', itemBackgroundColor);
+                  itemBackgroundColor.set('black']);
+                }
+                });
+            }, style: {width: 300, marginRight: 10,}}),
+            DynamicList({data: dataInputRight, renderItem : (item: Item, index?: number)=> {
+              const itemBackgroundColor = new Binding<ColorValue>('green');
+              return Pressable(
+                {children:[
+                  Text({text: item.name + ' ' + index, style: {color: 'red', fontSize: fontBinding, fontWeight: 'bold', backgroundColor: itemBackgroundColor}})
+
+                ],
+                onClick: (player: Player)=>{
+                  console.log('onclick get triggered', itemBackgroundColor);
+                  itemBackgroundColor.set('yellow', [player]);
+                }
+                });
+            }, style: {width: 300, marginLeft: 20}}),
+          ],
+          style: {flexDirection: "row"},
+        }),
+How to use dynamic lists in local mode
+Similar to other custom UI components, dynamic lists work well in local mode. Please refer to the custom ui local mode documentation for more information on the local mode feature.
+
+
+Custom UI Controls
+Overview
+Custom UI controls is an extension of custom UI with the Input Mode set to Interactive, Non Blocking. This input mode renders an interactive UI to the screen while still allowing players to move around, interact with the world and turn the camera.
+This input mode is primarily designed for creating a set of custom on-screen controls to work alongside or replace the built-in system controls on mobile.
+custom_ui_controls_in_kaiju
+Getting started
+Before you begin, it is recommended you review the following how-to guides:
+Creating a Custom UI Panel
+Local Mode Custom UI Scripts
+Non-Interactive Custom UI Screen Overlay
+Step by step guide
+Create the Custom UI Controls entity and script
+Add a custom UI gizmo to your world.
+Change the Display Mode property from Spatial to Screen Overlay.
+Change the Input Mode property from No Interaction to Interactive, Non Blocking.
+Create a new script asset for the custom UI.
+Change the execution mode of the script from Default to Local. Custom controls should use local mode to ensure a rapid response to input events.
+Set up the custom controls UI layout
+Open the TypeScript editor and open the new script asset.
+Write a UI layout with at least one Pressable component.
+Set ownership of the custom controls entity
+Please refer to Local Mode Custom UI Scripts for more detailed instructions on using local mode.
+Create a new script asset and leave it in Default execution mode.
+Create an empty gizmo and assign the script to it.
+Add a prop of type entity to the script and name it something like “myCustomControls”.
+In the start() method (or somewhere you consider suitable for setting ownership of entities, such as a trigger entity), add the following code: this.props.myCustomControls.owner.set(this.player)
+In the Desktop Editor, select the empty gizmo and assign the custom controls entity as the value for the “myCustomControls” prop.
+Set Preview Device to Mobile.
+Enter preview mode.
+Confirm the custom UI controls appear and the Pressable elements are interactable.
+Hiding the system controls
+If you want to completely replace the system controls with your own custom controls, you’ll need to hide the system controls. To do this, call a TypeScript function at the point when you would like the system controls to be hidden. This example hides the system controls when the custom UI panel is initialized.
+import { PlayerControls } from '@horizon/core';
+
+initializeUI() {
+  // Disable the system controls when the custom controls UI is initialized
+  PlayerControls.disableSystemControls()
+}
+Triggering Player Input Actions
+We have provided two TypeScript functions to trigger the down / up input actions on the player controls. These functions support the same PlayerInputAction enum as the Custom Input API.
+return Pressable({
+  children: Text({
+    text: "Jump!",
+    style: {
+      color: 'white',
+    },
+  }),
+  onPress: (player: hz.Player) => PlayerControls.triggerInputActionDown(PlayerInputAction.Jump),
+  onRelease: (player: hz.Player) => PlayerControls.triggerInputActionUp(PlayerInputAction.Jump),
+  style: {
+    position: 'absolute',
+    alignItems: 'center',
+    backgroundColor: backgroundColor,
+    borderRadius: 100,
+    height: 200,
+    justifyContent: 'center',
+    width: 200
+  },
+})
+
+
+Custom Input API
+Note: This feature requires local scripting.
+Overview
+Meta Horizon worlds custom input APIs are a set of interfaces that provide support for Meta Horizon World web and mobile. This is a version of Meta Horizon worlds that can be accessed on non-VR devices such as desktop computers and smartphones. These custom input APIs allow you to bind player input actions to keyboard controls on PCs, and to on-screen controls on mobile devices.
+This document shows you how you can use the Custom Input APIs to add a custom game-play input action, and demonstrates how to enable the player to jump when the user presses the spacebar on a PC keyboard, or when the user presses a button that is not associated with a grabbable entity. A detailed code example is provided at the end of this doc.
+Custom input APIs
+The custom input APIs (class, methods, and an enumeration) used in this example are introduced below. More specific details on each one are available in the Meta Horizon worlds API reference documentation.
+Class
+The PlayerControls class provides static methods to bind and query data about custom player input bindings.
+Methods
+Note: The PlayerControls methods fail if you call them on the server. Make sure to set your scripts Execution Mode to Local , and in your script, set the Player as the owner of the entity that the script component is attached to.
+connectLocalInput()
+The PlayerControls.connectLocalInput() method connects to input events for the local player. On mobile platforms, which display on-screen buttons for actions, this causes a button to be displayed with the specified icon. This method also takes an optional options parameter object. You can use it to:
+Set the default placement of on-screen buttons.
+Specify the use of a disposable object that sets any additional dispose-time operations.
+Note: On-screen buttons also appear on the PC desktop, but they’re not clickable; they just display the action keybind.
+getPlatformKeyNames()
+The PlayerControls.getPlatformKeyNames() method returns a list of names that represent the physical buttons or keys bound to specified actions.
+isInputActionSupported()
+The PlayerControls.isInputActionSupported() method returns a Boolen value that indicates whether the action is supported on the current platform.
+Note: Connecting to an unsupported input is allowed, but the input never becomes active, and its axis value remains 0.
+disableSystemControls() / enableSystemControls()
+The PlayerControls.disableSystemControls() and PlayerControls.enableSystemControls() methods can be used to disable and enable the onscreen buttons for mobile players. These methods must be called on a script attached to an object which is owned by the player, where the script Execution Mode is set to Local. For example:
+// This script Execution Mode must be set to Local.
+import * as hz from 'horizon/core';
+
+class DisableControls extends hz.Component {
+  static propsDefinition = {};
+
+  // Automatically called when the world starts.
+  start() {
+    // Disables the onscreen buttons for the mobile player who is set to the owner of the object this script is attached to.
+    PlayerControls.disableSystemControls();
+  }
+}
+Enumeration
+PlayerInputAction
+PlayerInputAction is defined as an enumeration. The enumeration lists the 15 available actions for input. They specify the Input Action Name, Index, associated Oculus Touch button, associated Desktop key, and Mobile button values for each of the indexed items.
+Note: Bindings on the Oculus touch controller can be changed in the settings for the Jump input game options.There are three options to choose from.
+Custom Input Code Example
+The TypeScript code example below demonstrates the PlayerControls methods and enumeration for creating a gameplay action. It shows how to configure the player input code to listen for a Jump action that occurs when the user presses the spacebar on a PC keyboard.
+The following procedure explains how to access this example so you can see working code.
+Setting Up the Script
+You must set the script’s running mode to run locally, not on the server (the default).
+In your script, when the Player enters the world, set the Player as the owner of the entity that the script component is attached to.
+Custom Input Script
+This script code demonstrates:
+How to set the entity owner to the Player, giving the client ownership of the entity that the script is attached to.
+Setting the on-screen button placement.
+Testing to see if the Jump input action is supported on this platform.
+Connecting the local input to the Jump action, and setting the on-screen icon.
+Registering to receive the Jump action when the Player presses the spacebar on a PC keyboard.
+Comments are included in the following code example to help explain what code blocks accomplish. Logging statements appear at various places in the code to help in debugging.
+Tip: If you run this script in VS Code, you can peruse the API definitions in the Meta Horizon worlds library. Position your cursor on horizon/core in the import statement, and then press F12.
+import * as hz from 'horizon/core';
+
+class SimpleInputAPITest extends hz.Component {
+  static propsDefinition = {};
+
+  // Defines a variable for holding a player input action.
+  input?: hz.PlayerInput;
+
+  // Automatically called when the world starts.
+  start() {
+    // Check the Horizon Editor's Console pane for progress
+    // messages like this one.
+    console.log('Registering the player entering the world.');
+
+    // Register to receive the OnPlayerEnterWorld event.
+    this.connectCodeBlockEvent(
+      this.entity,
+      hz.CodeBlockEvents.OnPlayerEnterWorld,
+      player => {
+        console.log('Setting entity Owner ' + player.id);
+        this.entity.owner.set(player);
+      },
+    );
+
+    // This script must run on the client.
+    if (this.entity.owner.get().id != this.world.getServerPlayer().id) {
+      const options = {preferredButtonPlacement: hz.ButtonPlacement.Center};
+
+      // Test that the jump action is supported.
+      if (hz.PlayerControls.isInputActionSupported(hz.PlayerInputAction.Jump)) {
+        // Set player input to the jump action, set the on-screen button
+        // icon to the jump icon, and set the button placement to center.
+        // third parameter is the disposableObject, which is set to "this".
+        this.input = hz.PlayerControls.connectLocalInput(
+          hz.PlayerInputAction.Jump,
+          hz.ButtonIcon.Jump,
+          this,
+          options,
+        );
+
+        // Register to receive the jump action when the player presses the spacebar.
+        this.input.registerCallback((action, pressed) => {
+          // Set spacebar to the jump action.
+          const keyName = hz.PlayerControls.getPlatformKeyNames(action)[0];
+          console.log('Action pressed callback', action, keyName, pressed);
+        });
+      }
+    }
+  }
+}
+
+hz.Component.register(SimpleInputAPITest);
+How to modify this script for other input actions
+For simplicity, this code example demonstrates only one input action. You can modify the code to listen for other input actions. Change the PlayerInputActions enum value passed to isInputActionSupported(), connectLocalInput(), and getPlatformKeyNames().
+
+
