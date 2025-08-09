@@ -1,62 +1,41 @@
-import * as hz from 'horizon/core';
-import { GameUI } from './GameUI';
-import { MenuUI } from './MenuUI';
-import { OnNavigateToGame } from './Events';
+import * as hz from 'horizon/core'
 
 /**
- * UIManager is a server-side script responsible for managing the player's UI state,
- * switching between the menu and the main game screen.
+ * UIManager is a server-side script responsible for spawning a personal UI 
+ * for each player and assigning them ownership so they can see it.
  */
 export class UIManager extends hz.Component<typeof UIManager> {
   static propsDefinition = {
-    GameUIGizmo: { type: hz.PropTypes.Entity },
-    MenuUIGizmo: { type: hz.PropTypes.Entity },
-  };
+    // This requires a "Template Asset" of your GameUI gizmo.
+    GameUIPrefab: { type: hz.PropTypes.Asset },
+  }
 
   start() {
+    // Listen for new players entering the world.
     this.connectCodeBlockEvent(this.entity, hz.CodeBlockEvents.OnPlayerEnterWorld, (player) => {
       this.initPlayerUI(player);
     });
 
+    // Also handle any players already in the world when the script starts up.
     this.world.getPlayers().forEach(player => this.initPlayerUI(player));
-
-    this.connectLocalBroadcastEvent(OnNavigateToGame, () => {
-      this.showGameUI();
-    });
   }
 
-  private initPlayerUI(player: hz.Player) {
-    if (!this.props.GameUIGizmo || !this.props.MenuUIGizmo) {
-      console.error("UIManager: GameUIGizmo or MenuUIGizmo is not set in the properties.");
+  private async initPlayerUI(player: hz.Player) {
+    if (!this.props.GameUIPrefab) {
+      console.error("ERROR: The 'GameUIPrefab' property is not set in the UIManager script. The UI will not load for players.");
       return;
     }
 
-    this.props.GameUIGizmo.owner.set(player);
-    this.props.MenuUIGizmo.owner.set(player);
-
-    this.async.setTimeout(() => {
-        this.showMenuUI();
-    }, 100);
-  }
-
-  private showMenuUI() {
-    if (!this.props.GameUIGizmo || !this.props.MenuUIGizmo) return;
-
-    const gameUI = this.props.GameUIGizmo.getComponents(GameUI)[0];
-    const menuUI = this.props.MenuUIGizmo.getComponents(MenuUI)[0];
+    // [FIXED] Correctly cast the asset to hz.Asset for spawning.
+    const gameUIPrefab = this.props.GameUIPrefab.as(hz.Asset);
     
-    if (gameUI) gameUI.hide();
-    if (menuUI) menuUI.show();
-  }
+    // Instantiate the UI and assign the player as the creator
+    const [gameUIInstance] = await this.world.spawnAsset(gameUIPrefab, new hz.Vec3(0, 0, 0));
 
-  private showGameUI() {
-    if (!this.props.GameUIGizmo || !this.props.MenuUIGizmo) return;
-
-    const gameUI = this.props.GameUIGizmo.getComponents(GameUI)[0];
-    const menuUI = this.props.MenuUIGizmo.getComponents(MenuUI)[0];
-
-    if (gameUI) gameUI.show();
-    if (menuUI) menuUI.hide();
+    // The critical step: Assign ownership to the player to make the UI visible
+    if (gameUIInstance) {
+      gameUIInstance.owner.set(player);
+    }
   }
 }
 
