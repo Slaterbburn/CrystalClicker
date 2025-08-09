@@ -97,4 +97,4 @@ export class LeaderboardUI extends UIComponent {
     }
   }
 }
-hz.Component.register(LeaderboardUI);
+UIComponent.register(LeaderboardUI);
