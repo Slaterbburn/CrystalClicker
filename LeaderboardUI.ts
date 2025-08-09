@@ -51,7 +51,7 @@ export class LeaderboardUI extends UIComponent {
               }),
               DynamicList({
                 data: this.leaderboardEntriesBinding,
-                renderItem: (item: LeaderboardEntryData, index: number) => this.renderLeaderboardItem(item, index)
+                renderItem: (item: LeaderboardEntryData, index?: number) => this.renderLeaderboardItem(item, index)
               })
             ]
           })
@@ -60,11 +60,11 @@ export class LeaderboardUI extends UIComponent {
     );
   }
   
-  private renderLeaderboardItem(item: LeaderboardEntryData, index: number): UINode {
+  private renderLeaderboardItem(item: LeaderboardEntryData, index?: number): UINode {
     return View({
       style: {
         flexDirection: 'row', paddingVertical: 15, paddingHorizontal: 10,
-        backgroundColor: index % 2 === 0 ? 'rgba(255,255,255,0.05)' : 'transparent',
+        backgroundColor: (index || 0) % 2 === 0 ? 'rgba(255,255,255,0.05)' : 'transparent',
         alignItems: 'center',
         borderRadius: 5
       },
@@ -85,7 +85,7 @@ export class LeaderboardUI extends UIComponent {
     if (!this.isVisible) {
       this.isVisible = true;
       this.isVisibleBinding.set(true);
-      this.sendLocalBroadcastEvent(OnRequestLeaderboardData, { leaderboardApiName });
+      this.sendNetworkBroadcastEvent(OnRequestLeaderboardData, { player: this.world.getLocalPlayer()!, leaderboardApiName });
     }
   }
 

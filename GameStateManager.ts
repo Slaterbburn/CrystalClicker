@@ -30,51 +30,51 @@ export class GameStateManager extends hz.Component<typeof GameStateManager> {
     this.connectNetworkBroadcastEvent(OnManualDrill, ({ player }) => { this.handleManualDrill(player, this.players.get(player.id)!); });
     this.connectNetworkBroadcastEvent(OnBuyGenerator, ({ player, generatorId }) => { this.handleBuyGenerator(player, generatorId, this.players.get(player.id)!); });
     
-    this.connectLocalBroadcastEvent(OnRequestLeaderboardData, async ({ player, leaderboardApiName }) => {
-        await this.fetchAndSendLeaderboard(player, leaderboardApiName);
-    });
+    // this.connectNetworkBroadcastEvent(OnRequestLeaderboardData, async ({ player, leaderboardApiName }) => {
+    //     await this.fetchAndSendLeaderboard(player, leaderboardApiName);
+    // });
 
-    this.async.setInterval(() => { this.players.forEach((state, playerId) => { this.savePlayer(this.world.getPlayer(playerId)!, state); }); }, this.props.autoSaveIntervalSecs * 1000);
+    this.async.setInterval(() => { for (const player of this.world.getPlayers()) { this.savePlayer(player, this.players.get(player.id)); } }, this.props.autoSaveIntervalSecs * 1000);
     this.async.setInterval(() => this.gameTick(), 1000);
   }
   
-  private async fetchAndSendLeaderboard(player: hz.Player, apiName: string) {
-    try {
-        const leaderboard = await this.world.leaderboards.getLeaderboard(apiName);
-        if (!leaderboard) {
-            console.error(`Failed to get leaderboard: ${apiName}`);
-            return;
-        }
+  // private async fetchAndSendLeaderboard(player: hz.Player, apiName: string) {
+  //   try {
+  //       const leaderboard = await this.world.leaderboards.getLeaderboard(apiName);
+  //       if (!leaderboard) {
+  //           console.error(`Failed to get leaderboard: ${apiName}`);
+  //           return;
+  //       }
         
-        const entries = await leaderboard.getEntries(10);
-        const entryData: LeaderboardEntryData[] = entries.map(entry => ({
-            rank: entry.rank,
-            displayName: entry.playerDisplayName,
-            score: entry.score,
-        }));
+  //       const entries = await leaderboard.getEntries(10);
+  //       const entryData: LeaderboardEntryData[] = entries.map(entry => ({
+  //           rank: entry.rank,
+  //           displayName: entry.playerDisplayName,
+  //           score: entry.score,
+  //       }));
         
-        this.sendNetworkEvent(player, OnLeaderboardDataUpdate, {
-            title: leaderboard.displayName,
-            entries: entryData
-        });
+  //       this.sendNetworkEvent(player, OnLeaderboardDataUpdate, {
+  //           title: leaderboard.displayName,
+  //           entries: entryData
+  //       });
         
-    } catch (e) {
-        console.error(`Error fetching leaderboard ${apiName}: ${e}`);
-    }
-  }
+  //   } catch (e) {
+  //       console.error(`Error fetching leaderboard ${apiName}: ${e}`);
+  //   }
+  // }
 
   private gameTick() {
-    this.players.forEach((state, playerId) => {
-      const totalProduction = this.calculateTotalGPS(state);
-      if (totalProduction > 0) {
-        state.crystalCount += totalProduction;
-        this.checkQuests(state, playerId);
-      }
-      const player = this.world.getPlayer(playerId);
-      if (player) {
+    for (const player of this.world.getPlayers()) {
+      const state = this.players.get(player.id);
+      if (state) {
+        const totalProduction = this.calculateTotalGPS(state);
+        if (totalProduction > 0) {
+          state.crystalCount += totalProduction;
+          this.checkQuests(state, player);
+        }
         this.sendNetworkEvent(player, OnGemCountUpdate, { crystalCount: state.crystalCount, totalGPS: totalProduction });
       }
-    });
+    }
   }
   
   private handleManualDrill(player: hz.Player, state: PlayerState) {
@@ -83,7 +83,7 @@ export class GameStateManager extends hz.Component<typeof GameStateManager> {
       state.crystalCount += crystalsPerClick;
       state.totalManualClicks++;
       state.depth += (1 * (1 + (state.rebirth.darkMatter * 0.01)));
-      this.checkQuests(state, player.id);
+      this.checkQuests(state, player);
       this.updatePlayerUI(player, state);
     }
   }
@@ -95,7 +95,7 @@ export class GameStateManager extends hz.Component<typeof GameStateManager> {
     state.crystalCount -= generator.currentCost;
     generator.owned++;
     generator.currentCost = Math.floor(generator.baseCost * Math.pow(1.15, generator.owned));
-    this.checkQuests(state, player.id);
+    this.checkQuests(state, player);
     this.savePlayer(player, state);
     this.updatePlayerUI(player, state);
   }
@@ -120,8 +120,8 @@ export class GameStateManager extends hz.Component<typeof GameStateManager> {
     const stateToSave = state || this.players.get(player.id);
     if (!stateToSave || !player) return;
 
-    this.world.leaderboards.setScoreForPlayer(player, 'top_crystals_all_time', Math.floor(stateToSave.crystalCount));
-    this.world.leaderboards.setScoreForPlayer(player, 'deepest_depth_all_time', Math.floor(stateToSave.depth));
+    this.world.leaderboards.setScoreForPlayer('top_crystals_all_time', player, Math.floor(stateToSave.crystalCount), true);
+    this.world.leaderboards.setScoreForPlayer('deepest_depth_all_time', player, Math.floor(stateToSave.depth), true);
     
     stateToSave.lastUpdateTimestamp = Date.now();
     await this.world.persistentStorage.setPlayerVariable(player, this.GAME_DATA_KEY, stateToSave);
@@ -173,7 +173,7 @@ export class GameStateManager extends hz.Component<typeof GameStateManager> {
     const crystals = milestone ? milestone.crystalsPerClick : 1;
     return crystals * (1 + (state.rebirth.darkMatter * 0.001));
   }
-  private checkQuests(state: PlayerState, playerId: number): boolean {
+  private checkQuests(state: PlayerState, player: hz.Player): boolean {
     if (!this.staticData) return false;
     let questWasCompleted = false;
     state.quests.forEach((questState) => {
@@ -183,7 +183,6 @@ export class GameStateManager extends hz.Component<typeof GameStateManager> {
           questState.isComplete = true;
           questWasCompleted = true;
           if (definition.rewardDarkMatter) { state.rebirth.darkMatter += definition.rewardDarkMatter; }
-          const player = this.world.getPlayer(playerId);
           if (player) { this.sendNetworkBroadcastEvent(OnQuestCompleted, { player, questId: definition.id }); }
         }
       }

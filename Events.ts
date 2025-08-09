@@ -36,4 +36,4 @@ export const OnNavigateToGame = new hz.LocalEvent<{}>();
 export const OnNavigateToMenu = new hz.LocalEvent<{}>();
 export const OnNavigateToLeaderboards = new hz.LocalEvent<{}>();
 
-export const OnRequestLeaderboardData = new hz.LocalEvent<{ leaderboardApiName: string }>();
+export const OnRequestLeaderboardData = new hz.NetworkEvent<{ player: hz.Player, leaderboardApiName: string }>('OnRequestLeaderboardData');
