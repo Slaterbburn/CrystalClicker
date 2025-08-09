@@ -22,7 +22,7 @@ export class MenuUI extends UIComponent {
   }
 
   initializeUI(): UINode {
-    return UINode.if(this.isVisibleBinding, () => 
+    return UINode.if(this.isVisibleBinding,
       View({
         style: { 
           width: '100%', height: '100%', 

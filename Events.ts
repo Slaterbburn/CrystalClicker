@@ -24,6 +24,11 @@ export const OnGeneratorMilestoneReached = new hz.NetworkEvent<{ player: hz.Play
 
 export const OnQuestCompleted = new hz.NetworkEvent<{ player: hz.Player, questId: number }>('OnQuestCompleted');
 
+export const OnRequestRebirthReset = new hz.LocalEvent<{ playerId: string }>();
+export const OnShowOfflineProgress = new hz.NetworkEvent<{ crystalsEarned: number, durationSeconds: number }>('OnShowOfflineProgress');
+export const OnClaimDailyReward = new hz.NetworkEvent<{ player: hz.Player }>('OnClaimDailyReward');
+export const OnDailyRewardStateUpdate = new hz.NetworkEvent<{ canClaim: boolean, consecutiveDays: number }>('OnDailyRewardStateUpdate');
+
 export const OnStaticDataLoaded = new hz.LocalEvent<{ generators: Generator[]; quests: QuestDefinition[]; milestones: Milestone[]; clickMilestones: ClickMilestone[]; }>()
 export const onImagesReady = new hz.NetworkEvent<{}>('onImagesReady');
 
@@ -31,4 +36,4 @@ export const OnNavigateToGame = new hz.LocalEvent<{}>();
 export const OnNavigateToMenu = new hz.LocalEvent<{}>();
 export const OnNavigateToLeaderboards = new hz.LocalEvent<{}>();
 
-export const OnRequestLeaderboardData = new hz.LocalEvent<{ leaderboardApiName: string }>();
+export const OnRequestLeaderboardData = new hz.NetworkEvent<{ player: hz.Player, leaderboardApiName: string }>('OnRequestLeaderboardData');

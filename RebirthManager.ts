@@ -43,7 +43,7 @@ export class RebirthManager extends hz.Component {
 
         await this.world.persistentStorage.setPlayerVariable(player, this.GAME_DATA_KEY, state);
 
-        this.sendLocalBroadcastEvent(OnRequestRebirthReset, { playerId: player.id });
+        this.sendLocalBroadcastEvent(OnRequestRebirthReset, { playerId: player.id.toString() });
     }
 }
 hz.Component.register(RebirthManager);
